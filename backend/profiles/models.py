@@ -8,6 +8,7 @@ class Profile(models.Model):
     bio = models.TextField(blank=True)
     profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     github = models.URLField(blank=True)
+    github_username = models.CharField(max_length=150, blank=True)
     linkedin = models.URLField(blank=True)
     portfolio_views = models.PositiveIntegerField(default=0)
 

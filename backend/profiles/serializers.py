@@ -10,5 +10,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             'bio',
             'profile_image',
             'github',
+            'github_username',
             'linkedin',
         ]

@@ -7,7 +7,7 @@ from projects.models import Project
 class PublicProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = ['title', 'description', 'project_url']
+        fields = ['title', 'description', 'project_url', 'tech_stack']
 
 
 class PublicProfileSerializer(serializers.ModelSerializer):
@@ -26,5 +26,5 @@ class PublicProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_projects(self, obj):
-        projects = Project.objects.filter(user=obj.user)
+        projects = Project.objects.filter(user=obj.user, is_visible=True)
         return PublicProjectSerializer(projects, many=True).data
