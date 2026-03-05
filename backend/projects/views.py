@@ -1,3 +1,5 @@
+from requests import request
+
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,6 +11,7 @@ from .services import fetch_github_repos
 from profiles.models import Profile
 from .models import Project
 from .serializers import ProjectSerializer
+from analytics.models import ProjectView
 
 # Create + List Projects
 class ProjectListCreateView(generics.ListCreateAPIView):
@@ -26,6 +29,7 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProjectSerializer
+    queryset = Project.objects.all()
 
     def get_queryset(self):
         return Project.objects.filter(user=self.request.user)
@@ -37,6 +41,23 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
             {"detail": "Project deleted successfully"},
             status=status.HTTP_200_OK
         )
+    def retrieve(self, request, *args, **kwargs):
+
+        project = self.get_object()
+
+        # record project view
+        ProjectView.objects.create(
+            project=project,
+            viewer_ip=request.META.get("REMOTE_ADDR")
+        )
+        if request.user != project.user:
+            ProjectView.objects.create(
+                project=project,
+                viewer_ip=request.META.get("REMOTE_ADDR")
+            )
+
+        serializer = self.get_serializer(project)
+        return Response(serializer.data)
     
 class ImportGithubProjects(APIView):
     permission_classes = [IsAuthenticated]

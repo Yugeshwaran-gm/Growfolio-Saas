@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
 from accounts.models import User
 from profiles.models import Profile
+from analytics.models import ProfileView
 from .serializers import PublicProfileSerializer
 
 
@@ -13,18 +15,33 @@ class PublicPortfolioView(APIView):
         try:
             user = User.objects.get(username=username)
             profile = Profile.objects.get(user=user)
+
         except User.DoesNotExist:
             return Response(
                 {"error": "User not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
         except Profile.DoesNotExist:
             return Response(
                 {"error": "Profile not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # increment counter
         profile.portfolio_views += 1
         profile.save(update_fields=["portfolio_views"])
-        
+
+        # record analytics event
+        ProfileView.objects.create(
+            user=user,
+            viewer_ip=request.META.get("REMOTE_ADDR")
+        )
+        if request.user != project.user:
+            ProjectView.objects.create(
+                project=project,
+                viewer_ip=request.META.get("REMOTE_ADDR")
+            )
+
         serializer = PublicProfileSerializer(profile)
         return Response(serializer.data)

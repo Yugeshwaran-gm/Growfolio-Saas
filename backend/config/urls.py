@@ -32,4 +32,5 @@ urlpatterns = [
     path('api/projects/', include('projects.urls')),
 
     path('portfolio/', include('public_portfolio.urls')),
+    path("api/analytics/", include("analytics.urls")),
 ]
