@@ -28,7 +28,7 @@ class PublicPortfolioView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # increment counter
+        # increment portfolio counter
         profile.portfolio_views += 1
         profile.save(update_fields=["portfolio_views"])
 
@@ -37,11 +37,6 @@ class PublicPortfolioView(APIView):
             user=user,
             viewer_ip=request.META.get("REMOTE_ADDR")
         )
-        if request.user != project.user:
-            ProjectView.objects.create(
-                project=project,
-                viewer_ip=request.META.get("REMOTE_ADDR")
-            )
 
         serializer = PublicProfileSerializer(profile)
         return Response(serializer.data)

@@ -33,4 +33,6 @@ urlpatterns = [
 
     path('portfolio/', include('public_portfolio.urls')),
     path("api/analytics/", include("analytics.urls")),
+    path("api/integrations/", include("integrations.urls")),
+    path("api/articles/", include("articles.urls")),
 ]

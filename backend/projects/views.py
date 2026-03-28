@@ -41,15 +41,12 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
             {"detail": "Project deleted successfully"},
             status=status.HTTP_200_OK
         )
+    
     def retrieve(self, request, *args, **kwargs):
 
         project = self.get_object()
 
-        # record project view
-        ProjectView.objects.create(
-            project=project,
-            viewer_ip=request.META.get("REMOTE_ADDR")
-        )
+        # record project view only if viewer is not owner
         if request.user != project.user:
             ProjectView.objects.create(
                 project=project,

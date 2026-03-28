@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
@@ -22,7 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-t(23@i!p3*=i=i5*tjycz5y3-o9n4k6!$wiozj+6*nyp67$%fk'
+SECRET_KEY = config(
+    "SECRET_KEY"
+)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -33,9 +36,13 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 FRONTEND_URL = config("FRONTEND_URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if host.strip()
+]
 
 
 # Application definition
@@ -56,7 +63,9 @@ INSTALLED_APPS = [
     'projects',
     'integrations',
     'analytics',
-    'public_portfolio', 
+    'public_portfolio',
+    'articles', 
+
 ]
 
 MIDDLEWARE = [
