@@ -1,4 +1,5 @@
-from integrations.services.devto_service import fetch_devto_articles
+from django.utils import timezone
+
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ from rest_framework import status
 import uuid
 from .models import ConnectedSource
 from .serializers import ConnectedSourceSerializer
-
+from .services.devto_service import fetch_devto_articles
 
 class ConnectSourceView(APIView):
 
@@ -43,7 +44,7 @@ class ConnectSourceView(APIView):
             "message": "Source connected successfully"
         }, status=status.HTTP_200_OK)
     
-class SyncDevtoView(APIView):
+# class SyncDevtoView(APIView):
 
     permission_classes = [IsAuthenticated]
 
@@ -72,3 +73,80 @@ class SyncDevtoView(APIView):
             "success": True,
             "message": "Articles synced"
         })
+    
+class IntegrationListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        integrations = ConnectedSource.objects.filter(
+            user=request.user
+        )
+
+        serializer = ConnectedSourceSerializer(
+            integrations,
+            many=True
+        )
+        
+        return Response({
+            "success": True,
+            "data": serializer.data
+        })
+    
+class IntegrationSyncView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, source):
+
+        try:
+
+            integration = ConnectedSource.objects.get(
+                user=request.user,
+                source_name=source
+            )
+
+        except ConnectedSource.DoesNotExist:
+
+            return Response({
+                "success": False,
+                "error": "Integration not connected"
+            })
+
+        try:
+
+            if source == "devto":
+
+                count = fetch_devto_articles(
+                    request.user,
+                    integration.external_username
+                )
+
+            else:
+                return Response({
+                    "success": False,
+                    "error": "Unsupported integration"
+                })
+
+            integration.sync_status = "success"
+            integration.last_sync = timezone.now()
+            integration.error_message = ""
+
+            integration.save()
+
+            return Response({
+                "success": True,
+                "message": f"{count} items synced"
+            })
+
+        except Exception as e:
+
+            integration.sync_status = "failed"
+            integration.error_message = str(e)
+            integration.save()
+
+            return Response({
+                "success": False,
+                "error": str(e)
+            })

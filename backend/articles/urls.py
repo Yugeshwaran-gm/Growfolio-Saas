@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import ArticleListView
+from .views import ArticleDetailView, ArticleListCreateView
 
 urlpatterns = [
-    path("", ArticleListView.as_view()),
+    path("", ArticleListCreateView.as_view()),
+    path("<int:article_id>/", ArticleDetailView.as_view()),
 ]

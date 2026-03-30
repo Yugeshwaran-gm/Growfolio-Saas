@@ -9,7 +9,7 @@ def fetch_devto_articles(user, username):
     response = requests.get(url)
 
     if response.status_code != 200:
-        return
+        return 
 
     data = response.json()
 
@@ -25,3 +25,6 @@ def fetch_devto_articles(user, username):
                 "source": "devto"
             }
         )
+
+    return len(data)
+        

@@ -6,5 +6,13 @@ class ConnectedSourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ConnectedSource
-        fields = "__all__"
+        fields = [
+            "id",
+            "source_name",
+            "connection_type",
+            "external_username",
+            "sync_status",
+            "last_sync",
+            "error_message"
+        ]
         read_only_fields = ["user", "last_sync", "sync_status"]
