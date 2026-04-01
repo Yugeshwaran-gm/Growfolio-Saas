@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'analytics',
     'public_portfolio',
     'articles', 
+    'skills',
+    'graph',
 
 ]
 

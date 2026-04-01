@@ -25,6 +25,8 @@ class Article(models.Model):
 
     published_at = models.DateTimeField()
 
+    source = models.CharField(max_length=50)
+
     tags = models.JSONField(default=list, blank=True)
     
     source = models.CharField(max_length=50)
@@ -33,3 +35,6 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+    
+    class Meta:
+        unique_together = ["source", "external_id"]

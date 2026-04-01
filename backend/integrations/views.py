@@ -46,33 +46,33 @@ class ConnectSourceView(APIView):
     
 # class SyncDevtoView(APIView):
 
-    permission_classes = [IsAuthenticated]
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+#     def post(self, request):
 
-        source = ConnectedSource.objects.filter(
-            user=request.user,
-            source_name="devto"
-        ).first()
+#         source = ConnectedSource.objects.filter(
+#             user=request.user,
+#             source_name="devto"
+#         ).first()
 
-        if not source:
-            return Response({
-                "success": False,
-                "error": "Dev.to not connected"
-            })
+#         if not source:
+#             return Response({
+#                 "success": False,
+#                 "error": "Dev.to not connected"
+#             })
 
-        fetch_devto_articles(
-            request.user,
-            source.external_username
-        )
+#         fetch_devto_articles(
+#             request.user,
+#             source.external_username
+#         )
 
-        source.sync_status = "connected"
-        source.save()
+#         source.sync_status = "connected"
+#         source.save()
 
-        return Response({
-            "success": True,
-            "message": "Articles synced"
-        })
+#         return Response({
+#             "success": True,
+#             "message": "Articles synced"
+#         })
     
 class IntegrationListView(APIView):
 
