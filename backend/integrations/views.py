@@ -1,13 +1,16 @@
 from django.utils import timezone
 
+from .tasks import sync_integration_task
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 import uuid
 from .models import ConnectedSource
+from .crypto_utils import encrypt_access_token
 from .serializers import ConnectedSourceSerializer
 from .services.devto_service import fetch_devto_articles
+from .services.sync_service import sync_integration
 
 class ConnectSourceView(APIView):
 
@@ -26,7 +29,8 @@ class ConnectSourceView(APIView):
                 "connection_type": data.get("connection_type"),
                 "external_username": data.get("external_username"),
                 "access_token": data.get("access_token"),
-                "verification_token": token
+                "verification_token": token,
+                "sync_status": "pending"
             }
         )
 
@@ -37,7 +41,6 @@ class ConnectSourceView(APIView):
                 "source_name": source.source_name,
                 "connection_type": source.connection_type,
                 "external_username": source.external_username,
-                "verification_token": source.verification_token,
                 "verification_token": source.verification_token,
                 "sync_status": source.sync_status
             },
@@ -116,20 +119,16 @@ class IntegrationSyncView(APIView):
 
         try:
 
-            if source == "devto":
-
-                count = fetch_devto_articles(
-                    request.user,
-                    integration.external_username
+            count = sync_integration(
+                request.user,
+                integration
+            )
+            sync_integration_task.delay(
+                request.user.id,
+                source
                 )
 
-            else:
-                return Response({
-                    "success": False,
-                    "error": "Unsupported integration"
-                })
-
-            integration.sync_status = "success"
+            integration.sync_status = "connected"
             integration.last_sync = timezone.now()
             integration.error_message = ""
 
@@ -150,3 +149,27 @@ class IntegrationSyncView(APIView):
                 "success": False,
                 "error": str(e)
             })
+
+class IntegrationDeleteView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, source):
+
+        integration = ConnectedSource.objects.filter(
+            user=request.user,
+            source_name=source
+        ).first()
+
+        if not integration:
+            return Response({
+                "success": False,
+                "error": "Integration not found"
+            })
+
+        integration.delete()
+
+        return Response({
+            "success": True,
+            "message": "Integration disconnected"
+        })

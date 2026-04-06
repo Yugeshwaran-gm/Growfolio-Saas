@@ -1,5 +1,3 @@
-from requests import request
-
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework import status
@@ -46,12 +44,21 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         project = self.get_object()
 
+        ip = request.META.get("REMOTE_ADDR")
+
         # record project view only if viewer is not owner
         if request.user != project.user:
-            ProjectView.objects.create(
+
+            already_viewed = ProjectView.objects.filter(
                 project=project,
-                viewer_ip=request.META.get("REMOTE_ADDR")
-            )
+                viewer_ip=ip
+            ).exists()
+
+            if not already_viewed:
+                ProjectView.objects.create(
+                    project=project,
+                    viewer_ip=ip
+                )
 
         serializer = self.get_serializer(project)
         return Response(serializer.data)

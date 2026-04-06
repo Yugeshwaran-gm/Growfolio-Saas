@@ -52,7 +52,7 @@ class ArticleListCreateView(APIView):
 
         return Response({
             "success": False,
-            "errors": serializer.errors
+            "error": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -90,7 +90,7 @@ class ArticleDetailView(APIView):
 
         return Response({
             "success": False,
-            "errors": serializer.errors
+            "error": serializer.errors
         })
 
     def delete(self, request, article_id):

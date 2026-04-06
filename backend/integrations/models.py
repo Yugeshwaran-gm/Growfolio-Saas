@@ -1,8 +1,11 @@
 from django.conf import settings
 from django.db import models
 
+from .crypto_utils import decrypt_access_token, encrypt_access_token
+
 
 class ConnectedSource(models.Model):
+    unique_together = ["user", "source_name"]
 
     CONNECTION_TYPES = [
         ("oauth", "OAuth"),
@@ -64,6 +67,15 @@ class ConnectedSource(models.Model):
     error_message = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.access_token and not self.access_token.startswith("gAAAA"):
+            self.access_token = encrypt_access_token(self.access_token)
+
+        super().save(*args, **kwargs)
+
+    def get_access_token(self):
+        return decrypt_access_token(self.access_token)
 
     def __str__(self):
         return f"{self.user.email} - {self.source_name}"

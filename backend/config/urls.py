@@ -31,10 +31,12 @@ urlpatterns = [
     path('api/profile/', include('profiles.urls')),
     path('api/projects/', include('projects.urls')),
 
-    path('portfolio/', include('public_portfolio.urls')),
+    path('api/portfolio/', include('public_portfolio.urls')),
     path("api/analytics/", include("analytics.urls")),
     path("api/integrations/", include("integrations.urls")),
     path("api/articles/", include("articles.urls")),
     path("api/skills/", include("skills.urls")),
     path("api/graph/", include("graph.urls")),
+    path("api/explore/", include("explore.urls")),
+    path("api/notifications/", include("notifications.urls")),
 ]

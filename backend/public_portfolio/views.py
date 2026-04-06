@@ -1,3 +1,4 @@
+from projects.models import Project
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -28,15 +29,27 @@ class PublicPortfolioView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # increment portfolio counter
-        profile.portfolio_views += 1
-        profile.save(update_fields=["portfolio_views"])
+        ip = request.META.get("REMOTE_ADDR")
 
-        # record analytics event
-        ProfileView.objects.create(
-            user=user,
-            viewer_ip=request.META.get("REMOTE_ADDR")
-        )
+        # Don't count owner's own views
+        if not (request.user.is_authenticated and request.user == user):
+
+            already_viewed = ProfileView.objects.filter(
+                user=user,
+                viewer_ip=ip
+            ).exists()
+
+            if not already_viewed:
+
+                # increment portfolio counter
+                profile.portfolio_views += 1
+                profile.save(update_fields=["portfolio_views"])
+
+                # record analytics event
+                ProfileView.objects.create(
+                    user=user,
+                    viewer_ip=ip
+                )
 
         serializer = PublicProfileSerializer(profile)
         return Response(serializer.data)
