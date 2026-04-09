@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'profiles.apps.ProfilesConfig',
+    'django_celery_results',
+    'django_celery_beat',
 
     'rest_framework',
     'corsheaders',
@@ -177,3 +179,4 @@ CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

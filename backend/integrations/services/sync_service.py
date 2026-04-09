@@ -1,3 +1,5 @@
+from articles.services.ingestion_service import ingest_articles_for_user
+
 from .devto_service import fetch_devto_articles
 from .github_service import fetch_github_repos
 from .gitlab_service import fetch_gitlab_projects
@@ -11,7 +13,8 @@ def sync_integration(user, integration):
     source = integration.source_name
 
     if source == "devto":
-        return fetch_devto_articles(user, integration.external_username)
+        # return fetch_devto_articles(user, integration.external_username)
+        return ingest_articles_for_user(user)
 
     if source == "github":
         return fetch_github_repos(user, integration.external_username)

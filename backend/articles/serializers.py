@@ -10,10 +10,17 @@ class ArticleSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "url",
+            "external_id",
             "description",
             "source",
             "tags",
             "published_at",
             "created_at"
         ]
-        read_only_fields = ["user"]
+        read_only_fields = [
+            "user",
+            "source",
+            "external_id",
+            "published_at",
+            "tags",
+        ]

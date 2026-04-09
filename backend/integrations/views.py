@@ -1,5 +1,3 @@
-from django.utils import timezone
-
 from .tasks import sync_integration_task
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -7,10 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import uuid
 from .models import ConnectedSource
-from .crypto_utils import encrypt_access_token
 from .serializers import ConnectedSourceSerializer
-from .services.devto_service import fetch_devto_articles
-from .services.sync_service import sync_integration
 
 class ConnectSourceView(APIView):
 
@@ -118,25 +113,18 @@ class IntegrationSyncView(APIView):
             })
 
         try:
+            integration.sync_status = "pending"
+            integration.error_message = ""
+            integration.save()
 
-            count = sync_integration(
-                request.user,
-                integration
-            )
             sync_integration_task.delay(
                 request.user.id,
                 source
                 )
 
-            integration.sync_status = "connected"
-            integration.last_sync = timezone.now()
-            integration.error_message = ""
-
-            integration.save()
-
             return Response({
                 "success": True,
-                "message": f"{count} items synced"
+                "message": "Sync started"
             })
 
         except Exception as e:

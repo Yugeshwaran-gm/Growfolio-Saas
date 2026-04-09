@@ -15,10 +15,9 @@ class Article(models.Model):
     url = models.URLField()
 
     external_id = models.CharField(
-    max_length=100,
-    unique=True,
-    null=True,
-    blank=True
+        max_length=255,
+        null=True,
+        blank=True
     )
     
     description = models.TextField(blank=True)
@@ -28,8 +27,6 @@ class Article(models.Model):
     source = models.CharField(max_length=50)
 
     tags = models.JSONField(default=list, blank=True)
-    
-    source = models.CharField(max_length=50)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
