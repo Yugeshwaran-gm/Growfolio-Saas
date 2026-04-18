@@ -44,7 +44,7 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         project = self.get_object()
 
-        ip = request.META.get("REMOTE_ADDR")
+        ip = request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR")
 
         # record project view only if viewer is not owner
         if request.user != project.user:

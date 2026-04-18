@@ -39,4 +39,6 @@ urlpatterns = [
     path("api/graph/", include("graph.urls")),
     path("api/explore/", include("explore.urls")),
     path("api/notifications/", include("notifications.urls")),
+    path("api/recruiter/", include("recruiter.urls")),
+    path("api/admin/", include("admin_panel.urls")),
 ]

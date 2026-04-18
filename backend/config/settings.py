@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'graph',
     'explore',
     'notifications',
+    'recruiter',
+    'admin_panel',
 
 ]
 

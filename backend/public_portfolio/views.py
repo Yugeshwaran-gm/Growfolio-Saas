@@ -29,25 +29,35 @@ class PublicPortfolioView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        ip = request.META.get("REMOTE_ADDR")
+        ip = request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR")
+
+        viewer = request.user if request.user.is_authenticated else None
 
         # Don't count owner's own views
-        if not (request.user.is_authenticated and request.user == user):
+        if not (viewer and viewer == user):
 
-            already_viewed = ProfileView.objects.filter(
-                user=user,
-                viewer_ip=ip
-            ).exists()
+            if viewer:
+                # Logged-in user → track by user
+                already_viewed = ProfileView.objects.filter(
+                    user=user,
+                    viewer=viewer
+                ).exists()
+            else:
+                # Anonymous → track by IP
+                already_viewed = ProfileView.objects.filter(
+                    user=user,
+                    viewer_ip=ip,
+                    viewer__isnull=True
+                ).exists()
 
             if not already_viewed:
 
-                # increment portfolio counter
                 profile.portfolio_views += 1
                 profile.save(update_fields=["portfolio_views"])
 
-                # record analytics event
                 ProfileView.objects.create(
                     user=user,
+                    viewer=viewer,
                     viewer_ip=ip
                 )
 
