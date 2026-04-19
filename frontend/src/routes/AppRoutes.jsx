@@ -5,6 +5,7 @@ import { ProtectedRoute, PublicRoute, AdminRoute } from './ProtectedRoute'
 import LoginPage from '../pages/auth/LoginPage'
 import RegisterPage from '../pages/auth/RegisterPage'
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage'
+import SetNewPassword from '../pages/auth/SetNewPassword'
 
 // Public Pages
 import HomePage from '../pages/public/HomePage'
@@ -15,10 +16,16 @@ import DashboardPage from '../pages/user/DashboardPage'
 import ProjectsPage from '../pages/user/ProjectsPage'
 import SkillsPage from '../pages/user/SkillsPage'
 import ProfilePage from '../pages/user/ProfilePage'
+import ProfileManagementPage from '../pages/user/ProfileManagementPage'
+import AnalyticsDashboard from '../pages/user/AnalyticsDashboard'
+import AccountSettingsPage from '../pages/user/AccountSettingsPage'
+import NotificationsPage from '../pages/user/NotificationsPage'
 
 // Admin Pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import UsersPage from '../pages/admin/UsersPage'
+import UserManagementPage from '../pages/admin/UserManagementPage'
+import AdminReportsLogsPage from '../pages/admin/AdminReportsLogsPage'
 
 export function AppRoutes() {
   return (
@@ -48,6 +55,14 @@ export function AppRoutes() {
         element={
           <PublicRoute>
             <ForgotPasswordPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/set-new-password"
+        element={
+          <PublicRoute>
+            <SetNewPassword />
           </PublicRoute>
         }
       />
@@ -85,6 +100,38 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/dashboard/profile-management"
+        element={
+          <ProtectedRoute>
+            <ProfileManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/analytics"
+        element={
+          <ProtectedRoute>
+            <AnalyticsDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/account-settings"
+        element={
+          <ProtectedRoute>
+            <AccountSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin Routes */}
       <Route
@@ -100,6 +147,23 @@ export function AppRoutes() {
         element={
           <AdminRoute>
             <UsersPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/user-management"
+        element={
+          <AdminRoute>
+            <UserManagementPage />
+          </AdminRoute>
+        }
+
+      />
+      <Route
+        path="/admin/reports-logs"
+        element={
+          <AdminRoute>
+            <AdminReportsLogsPage />
           </AdminRoute>
         }
       />

@@ -1,26 +1,22 @@
 import apiClient from './api'
 
 export const authService = {
-  login: async (email, password) => {
+  login: async ({ email, password }) => {
     const response = await apiClient.post('/auth/login/', {
       email,
       password,
     })
+
     return response.data
   },
 
-  register: async (email, password, firstName, lastName) => {
-    const response = await apiClient.post('/auth/register/', {
+  register: async ({ email, username, password }) => {
+    const response = await apiClient.post('/accounts/register/', {
       email,
+      username,
       password,
-      first_name: firstName,
-      last_name: lastName,
     })
-    return response.data
-  },
 
-  logout: async () => {
-    const response = await apiClient.post('/auth/logout/')
     return response.data
   },
 
@@ -28,31 +24,38 @@ export const authService = {
     const response = await apiClient.post('/auth/refresh/', {
       refresh: refreshToken,
     })
-    return response.data
-  },
 
-  getCurrentUser: async () => {
-    const response = await apiClient.get('/auth/me/')
-    return response.data
-  },
-
-  updateProfile: async (data) => {
-    const response = await apiClient.put('/auth/profile/', data)
     return response.data
   },
 
   requestPasswordReset: async (email) => {
-    const response = await apiClient.post('/auth/password-reset-request/', {
+    const response = await apiClient.post('/accounts/forgot-password/', {
       email,
     })
+
     return response.data
   },
 
   resetPassword: async (token, password) => {
-    const response = await apiClient.post('/auth/password-reset/', {
-      token,
+    const response = await apiClient.post(`/accounts/reset-password/${token}/`, {
       password,
     })
+
     return response.data
+  },
+
+  changePassword: async ({ old_password, new_password }) => {
+    const response = await apiClient.post('/accounts/change-password/', {
+      old_password,
+      new_password,
+    })
+
+    return response.data
+  },
+
+  logout: () => {
+    sessionStorage.removeItem('auth_token')
+    sessionStorage.removeItem('refresh_token')
+    sessionStorage.removeItem('auth_user')
   },
 }
