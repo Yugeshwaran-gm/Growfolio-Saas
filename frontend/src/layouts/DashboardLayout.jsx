@@ -7,6 +7,7 @@ export function DashboardLayout({ children }) {
     { path: '/dashboard/projects', label: 'Projects' },
     { path: '/dashboard/skills', label: 'Skills' },
     { path: '/dashboard/articles', label: 'Articles' },
+    { path: '/dashboard/integrations', label: 'Integrations' },
     { path: '/dashboard/profile', label: 'Profile' },
   ]
 

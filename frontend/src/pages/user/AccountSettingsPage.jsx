@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { DashboardLayout } from '../../layouts/DashboardLayout'
+import { Alert } from '../../components/ui/States'
+import { authService } from '../../services/authService'
 
 // Toggle Switch Component
 function ToggleSwitch({ defaultChecked = false, onChange }) {
@@ -75,6 +77,11 @@ export default function AccountSettingsPage() {
     confirm: '',
   })
 
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
+
   const [preferences, setPreferences] = useState({
     weeklyAnalytics: true,
     recruiterMessage: true,
@@ -92,28 +99,80 @@ export default function AccountSettingsPage() {
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target
+    setErrorMessage('')
+    setSuccessMessage('')
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: '',
+    }))
     setPasswords(prev => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  const handleUpdatePassword = () => {
-    if (passwords.new !== passwords.confirm) {
-      alert('Passwords do not match')
-      return
+  const validatePasswordForm = () => {
+    const nextErrors = {}
+
+    if (!passwords.current.trim()) {
+      nextErrors.current = 'Current password is required.'
     }
-    if (!passwords.current || !passwords.new) {
-      alert('Please fill all password fields')
-      return
+
+    if (!passwords.new.trim()) {
+      nextErrors.new = 'New password is required.'
+    } else if (passwords.new.length < 8) {
+      nextErrors.new = 'New password must be at least 8 characters.'
     }
-    alert('Password updated successfully!')
-    setPasswords({ current: '', new: '', confirm: '' })
+
+    if (!passwords.confirm.trim()) {
+      nextErrors.confirm = 'Please confirm your new password.'
+    } else if (passwords.new !== passwords.confirm) {
+      nextErrors.confirm = 'Passwords do not match.'
+    }
+
+    if (passwords.current && passwords.new && passwords.current === passwords.new) {
+      nextErrors.new = 'New password must be different from the current password.'
+    }
+
+    return nextErrors
   }
 
-  const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) {
-      alert('Account deletion initiated...')
+  const handleUpdatePassword = async (event) => {
+    event.preventDefault()
+    setErrorMessage('')
+    setSuccessMessage('')
+
+    const nextErrors = validatePasswordForm()
+    setFieldErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) {
+      return
+    }
+
+    setIsSavingPassword(true)
+
+    try {
+      const response = await authService.changePassword({
+        old_password: passwords.current,
+        new_password: passwords.new,
+      })
+
+      if (response?.error) {
+        setErrorMessage(response.error)
+        return
+      }
+
+      setSuccessMessage(response?.message || 'Password updated successfully.')
+      setPasswords({ current: '', new: '', confirm: '' })
+      setFieldErrors({})
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.error ||
+        error.response?.data?.detail ||
+        'Failed to update password.'
+      )
+    } finally {
+      setIsSavingPassword(false)
     }
   }
 
@@ -170,49 +229,67 @@ export default function AccountSettingsPage() {
           {/* Security Section */}
           <SettingsSection>
             <SectionHeader icon="🔒" title="Security" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
-                <input
-                  type="password"
-                  name="current"
-                  value={passwords.current}
-                  onChange={handlePasswordChange}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-colors"
-                />
+            {errorMessage && (
+              <div className="mb-6">
+                <Alert type="error" message={errorMessage} />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
-                <input
-                  type="password"
-                  name="new"
-                  value={passwords.new}
-                  onChange={handlePasswordChange}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-colors"
-                />
+            )}
+
+            {successMessage && (
+              <div className="mb-6">
+                <Alert type="success" message={successMessage} />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirm New Password</label>
-                <input
-                  type="password"
-                  name="confirm"
-                  value={passwords.confirm}
-                  onChange={handlePasswordChange}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-colors"
-                />
+            )}
+
+            <form onSubmit={handleUpdatePassword} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
+                  <input
+                    type="password"
+                    name="current"
+                    value={passwords.current}
+                    onChange={handlePasswordChange}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-colors"
+                  />
+                  {fieldErrors.current && <p className="text-xs text-red-600">{fieldErrors.current}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
+                  <input
+                    type="password"
+                    name="new"
+                    value={passwords.new}
+                    onChange={handlePasswordChange}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-colors"
+                  />
+                  {fieldErrors.new && <p className="text-xs text-red-600">{fieldErrors.new}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirm New Password</label>
+                  <input
+                    type="password"
+                    name="confirm"
+                    value={passwords.confirm}
+                    onChange={handlePasswordChange}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-colors"
+                  />
+                  {fieldErrors.confirm && <p className="text-xs text-red-600">{fieldErrors.confirm}</p>}
+                </div>
               </div>
-            </div>
-            <div className="mt-6">
+              <div className="mt-2">
               <button
-                onClick={handleUpdatePassword}
+                type="submit"
+                disabled={isSavingPassword}
                 className="bg-primary text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
               >
-                Update Password
+                {isSavingPassword ? 'Updating...' : 'Update Password'}
               </button>
-            </div>
+              </div>
+            </form>
           </SettingsSection>
 
           {/* Preferences Section */}
@@ -259,21 +336,6 @@ export default function AccountSettingsPage() {
             </div>
           </SettingsSection>
 
-          {/* Danger Zone */}
-          <SettingsSection isDangerZone={true}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-xl font-bold text-primary mb-1">Danger Zone</h2>
-                <p className="text-sm text-slate-500">Permanently remove your account and all aggregated portfolio data. This action is irreversible.</p>
-              </div>
-              <button
-                onClick={handleDeleteAccount}
-                className="bg-primary/10 text-primary border border-primary/30 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shrink-0"
-              >
-                Delete Account
-              </button>
-            </div>
-          </SettingsSection>
         </div>
 
         {/* Footer */}

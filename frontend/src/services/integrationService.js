@@ -1,9 +1,22 @@
 import apiClient from './api'
 
+function unwrapApiData(data) {
+  if (data && typeof data === 'object' && 'data' in data) {
+    return data.data
+  }
+
+  return data
+}
+
 export const integrationService = {
-  listIntegrations: async () => {
+  getIntegrations: async () => {
     const response = await apiClient.get('/integrations/')
-    return response.data
+    const payload = unwrapApiData(response.data)
+    return Array.isArray(payload) ? payload : []
+  },
+
+  listIntegrations: async () => {
+    return integrationService.getIntegrations()
   },
 
   connectIntegration: async (payload) => {

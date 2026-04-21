@@ -5,9 +5,13 @@ function unwrapListResponse(data) {
 }
 
 export const notificationService = {
-  listNotifications: async () => {
+  getNotifications: async () => {
     const response = await apiClient.get('/notifications/')
     return unwrapListResponse(response.data)
+  },
+
+  listNotifications: async () => {
+    return notificationService.getNotifications()
   },
 
   markAsRead: async (notificationId) => {

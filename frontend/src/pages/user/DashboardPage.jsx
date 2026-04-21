@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { DashboardLayout } from '../../layouts/DashboardLayout'
+import { Loading } from '../../components/ui/Loading'
+import { ErrorState } from '../../components/ui/States'
 import Button from '../../components/ui/Button'
+import { analyticsService } from '../../services/analyticsService'
 
 // Stat Card Component
 function StatCard({ icon, label, value, badge, badgeColor }) {
@@ -91,37 +95,41 @@ function PlatformCard({ name, initials, bgColor }) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [analytics, setAnalytics] = useState({ profile_views: 0, project_views: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const displayName = user?.full_name || user?.first_name || 'User'
 
   const statCards = [
     {
-      icon: '💻',
-      label: 'GitHub Repos',
-      value: '42',
-      badge: '+2 new',
+      icon: '👁️',
+      label: 'Profile Views',
+      value: analytics.profile_views.toLocaleString(),
+      badge: 'Live',
+      badgeColor: 'text-primary-500 text-xs font-bold bg-primary-500/10 px-2 py-1 rounded-full',
+    },
+    {
+      icon: '📊',
+      label: 'Project Views',
+      value: analytics.project_views.toLocaleString(),
+      badge: 'Live',
       badgeColor: 'text-emerald-500 text-xs font-bold bg-emerald-50 px-2 py-1 rounded-full',
     },
     {
-      icon: '📄',
-      label: 'Articles Published',
-      value: '15',
-      badge: '3 pending',
-      badgeColor: 'text-accent-500 text-xs font-bold bg-accent-500/10 px-2 py-1 rounded-full',
-    },
-    {
-      icon: '⚙️',
-      label: 'Problems Solved',
-      value: '128',
-      badge: 'Top 5%',
+      icon: '💻',
+      label: 'Dashboard Status',
+      value: 'Live',
+      badge: 'Active',
       badgeColor: 'text-slate-400 text-xs font-medium bg-slate-100 px-2 py-1 rounded-full',
     },
     {
-      icon: '👁️',
-      label: 'Profile Views',
-      value: '1,240',
-      badge: '+12%',
-      badgeColor: 'text-primary-500 text-xs font-bold bg-primary-500/10 px-2 py-1 rounded-full',
+      icon: '⚙️',
+      label: 'Portfolio Overview',
+      value: 'Synced',
+      badge: 'OK',
+      badgeColor: 'text-accent-500 text-xs font-bold bg-accent-500/10 px-2 py-1 rounded-full',
     },
   ]
 
@@ -149,6 +157,27 @@ export default function DashboardPage() {
     },
   ]
 
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const data = await analyticsService.getDashboard()
+        setAnalytics({
+          profile_views: data?.profile_views ?? 0,
+          project_views: data?.project_views ?? 0,
+        })
+      } catch (err) {
+        setError(err.response?.data?.detail || 'Failed to load dashboard analytics.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadAnalytics()
+  }, [])
+
   return (
     <DashboardLayout>
       {/* Main Content Container */}
@@ -171,14 +200,24 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-6 ml-8">
-            <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/notifications')}
+              aria-label="Open notifications"
+              className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+            >
               🔔
               <span className="absolute top-2 right-2 w-2 h-2 bg-accent-500 rounded-full border-2 border-white" />
             </button>
 
             <div className="h-8 w-px bg-slate-200 mx-2" />
 
-            <button className="flex items-center gap-3 p-1 hover:bg-slate-100 rounded-xl transition-colors">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/profile')}
+              aria-label="Open profile"
+              className="flex items-center gap-3 p-1 hover:bg-slate-100 rounded-xl transition-colors"
+            >
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold leading-none text-slate-900">{displayName}</p>
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-tight">Pro Member</p>
@@ -202,25 +241,35 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {statCards.map((stat, index) => (
-              <StatCard
-                key={index}
-                icon={stat.icon}
-                label={stat.label}
-                value={stat.value}
-                badge={stat.badge}
-                badgeColor={stat.badgeColor}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-10">
+              <Loading message="Loading dashboard analytics..." />
+            </div>
+          ) : error ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-6">
+              <ErrorState message={error} onRetry={() => window.location.reload()} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {statCards.map((stat, index) => (
+                <StatCard
+                  key={index}
+                  icon={stat.icon}
+                  label={stat.label}
+                  value={stat.value}
+                  badge={stat.badge}
+                  badgeColor={stat.badgeColor}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Middle Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Recent Activity Feed */}
             <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-lg text-primary-500">Recent Activity Feed</h3>
+                <h3 className="font-bold text-lg text-primary-500">Mock Activity Feed</h3>
                 <button className="text-primary-500 text-sm font-bold hover:underline">View all</button>
               </div>
               <div className="p-6 space-y-6">
@@ -261,7 +310,11 @@ export default function DashboardPage() {
                   isConnected={true}
                   bgColor="bg-orange-600"
                 />
-                <Button variant="secondary" className="w-full">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => navigate('/dashboard/integrations')}
+                >
                   Manage Integrations
                 </Button>
               </div>

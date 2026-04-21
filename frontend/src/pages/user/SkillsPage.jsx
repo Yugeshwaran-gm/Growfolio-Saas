@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DashboardLayout } from '../../layouts/DashboardLayout'
-import { Card, CardHeader, CardBody, CardFooter } from '../../components/ui/Card'
+import { Card, CardHeader, CardBody } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 
 export default function SkillsPage() {
@@ -51,7 +51,6 @@ export default function SkillsPage() {
                     />
                   </div>
                 </div>
-                <Button variant="secondary" size="sm">Edit</Button>
               </div>
             ))}
           </div>

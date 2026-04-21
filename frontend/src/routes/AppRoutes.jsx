@@ -15,11 +15,14 @@ import NotFoundPage from '../pages/public/NotFoundPage'
 import DashboardPage from '../pages/user/DashboardPage'
 import ProjectsPage from '../pages/user/ProjectsPage'
 import SkillsPage from '../pages/user/SkillsPage'
+import ArticlesPage from '../pages/user/ArticlesPage'
+import ArticleDetailPage from '../pages/user/ArticleDetailPage'
 import ProfilePage from '../pages/user/ProfilePage'
 import ProfileManagementPage from '../pages/user/ProfileManagementPage'
 import AnalyticsDashboard from '../pages/user/AnalyticsDashboard'
 import AccountSettingsPage from '../pages/user/AccountSettingsPage'
 import NotificationsPage from '../pages/user/NotificationsPage'
+import ApiIntegration from '../pages/user/ApiIntegration'
 
 // Admin Pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
@@ -93,6 +96,22 @@ export function AppRoutes() {
         }
       />
       <Route
+        path="/dashboard/articles"
+        element={
+          <ProtectedRoute>
+            <ArticlesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/articles/:id"
+        element={
+          <ProtectedRoute>
+            <ArticleDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard/profile"
         element={
           <ProtectedRoute>
@@ -125,10 +144,26 @@ export function AppRoutes() {
         }
       />
       <Route
+        path="/dashboard/settings"
+        element={
+          <ProtectedRoute>
+            <AccountSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard/notifications"
         element={
           <ProtectedRoute>
             <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/integrations"
+        element={
+          <ProtectedRoute>
+            <ApiIntegration />
           </ProtectedRoute>
         }
       />

@@ -10,6 +10,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [importFeedback, setImportFeedback] = useState(null)
   const [importing, setImporting] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
 
@@ -51,12 +52,39 @@ export default function ProjectsPage() {
   const handleImportGitHub = async () => {
     setImporting(true)
     setError('')
+    setImportFeedback(null)
 
     try {
-      await projectService.importGithubProjects()
+      const response = await projectService.importGithubProjects()
+
+      if (response?.success === false || response?.error) {
+        setError(response?.error || 'Failed to import GitHub projects.')
+        return
+      }
+
+      const createdProjects = Array.isArray(response?.created_projects)
+        ? response.created_projects
+        : []
+
       await reloadProjects()
+
+      if (createdProjects.length > 0) {
+        setImportFeedback({
+          type: 'success',
+          message: `Imported ${createdProjects.length} project${createdProjects.length === 1 ? '' : 's'} from GitHub.`,
+        })
+      } else {
+        setImportFeedback({
+          type: 'info',
+          message: 'No new GitHub projects were imported. Your projects are already up to date.',
+        })
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to import GitHub projects.')
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        'Failed to import GitHub projects.'
+      )
     } finally {
       setImporting(false)
     }
@@ -92,6 +120,12 @@ export default function ProjectsPage() {
           {importing ? 'Importing...' : 'Import from GitHub'}
         </Button>
       </div>
+
+      {importFeedback && !error && (
+        <div className="mb-6">
+          <Alert type={importFeedback.type} message={importFeedback.message} />
+        </div>
+      )}
 
       {error && (
         <div className="mb-6">
