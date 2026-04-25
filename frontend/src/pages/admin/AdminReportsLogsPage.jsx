@@ -1,317 +1,214 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AdminLayout } from '../../layouts/AdminLayout'
+import { Loading } from '../../components/ui/Loading'
+import { ErrorState, EmptyState } from '../../components/ui/States'
+import { adminService } from '../../services/adminService'
 
-// KPI Card Component
 function KPICard({ icon, label, value }) {
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6">
-      <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-3xl">
-        {icon}
-      </div>
+    <div className="flex items-center gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-3xl">{icon}</div>
       <div>
-        <p className="text-sm font-semibold text-slate-500 uppercase tracking-tight">{label}</p>
-        <p className="text-3xl font-display font-black text-accent">{value}</p>
+        <p className="text-sm font-semibold uppercase tracking-tight text-slate-500">{label}</p>
+        <p className="text-3xl font-black text-accent">{value.toLocaleString()}</p>
       </div>
     </div>
   )
 }
 
-// Report Status Badge Component
-function StatusBadge({ status }) {
-  if (status === 'OPEN') {
+function StatusBadge({ active }) {
+  if (active) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/20 text-primary text-xs font-bold border border-accent/40">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
-        OPEN
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-xs font-bold text-primary">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent"></span>
+        ACTIVE
       </span>
     )
   }
+
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-primary/20 text-primary/60 text-xs font-bold">
-      RESOLVED
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+      INACTIVE
     </span>
   )
 }
 
-// Report Reason Badge Component
-function ReasonBadge({ reason }) {
-  return (
-    <span className="px-2.5 py-1 rounded bg-slate-100 text-slate-600 text-xs font-bold uppercase">
-      {reason}
-    </span>
-  )
+function resolveRole(user) {
+  if (user.is_recruiter) {
+    return 'Recruiter'
+  }
+  if (user.is_creator) {
+    return 'Creator'
+  }
+  return 'User'
 }
 
-// Report Row Component
-function ReportRow({ report }) {
-  const handleReview = () => alert(`Reviewing report: ${report.id}`)
-  const handleDismiss = () => alert(`Dismissing report: ${report.id}`)
-
-  const isResolved = report.status === 'RESOLVED'
-
-  return (
-    <tr className="hover:bg-slate-50/50 transition-colors">
-      <td className="px-6 py-4 text-sm font-mono text-slate-600 font-bold">{report.id}</td>
-      <td className="px-6 py-4 text-sm font-medium text-slate-900">{report.reporter}</td>
-      <td className="px-6 py-4 text-sm text-slate-600">{report.targetUser}</td>
-      <td className="px-6 py-4">
-        <ReasonBadge reason={report.reason} />
-      </td>
-      <td className="px-6 py-4">
-        <StatusBadge status={report.status} />
-      </td>
-      <td className="px-6 py-4 text-right space-x-2">
-        <button
-          onClick={handleReview}
-          disabled={isResolved}
-          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            isResolved
-              ? 'bg-primary text-white opacity-50 cursor-not-allowed'
-              : 'bg-primary text-white hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20'
-          }`}
-        >
-          Review
-        </button>
-        <button
-          onClick={handleDismiss}
-          disabled={isResolved}
-          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            isResolved
-              ? 'text-primary border border-primary/20 bg-slate-50 cursor-default'
-              : 'text-primary border border-primary/20 hover:bg-slate-50'
-          }`}
-        >
-          {isResolved ? 'Archived' : 'Dismiss'}
-        </button>
-      </td>
-    </tr>
-  )
-}
-
-// Log Entry Component
-function LogEntry({ timestamp, level, message }) {
-  const getLevelColor = () => {
-    switch (level) {
-      case 'INFO':
-        return 'text-accent'
-      case 'WARN':
-        return 'text-accent'
-      case 'ERROR':
-        return 'text-red-400'
-      default:
-        return 'text-green-400'
-    }
+function getDisplayName(user) {
+  const email = user?.email || ''
+  if (!email.includes('@')) {
+    return 'Unknown User'
   }
-
-  const getMessageColor = () => {
-    switch (level) {
-      case 'ERROR':
-        return 'text-red-300'
-      case 'WARN':
-        return 'text-accent/90 italic'
-      default:
-        return 'text-white/80'
-    }
-  }
-
-  return (
-    <div className="flex gap-4">
-      <span className="text-white/30 shrink-0 font-mono">{timestamp}</span>
-      <span className={`${getLevelColor()} font-bold shrink-0`}>[{level}]</span>
-      <span className={getMessageColor()}>{message}</span>
-    </div>
-  )
+  return email.split('@')[0]
 }
 
 export default function AdminReportsLogsPage() {
-  const [activeTab, setActiveTab] = useState('user-reports')
+  const [dashboard, setDashboard] = useState(null)
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const kpiData = [
-    { icon: '📋', label: 'Pending User Reports', value: '124' },
-    { icon: '🚩', label: 'Active Abuse Flags', value: '42' },
-    { icon: '🐛', label: 'System Error Count', value: '12' },
-  ]
+  const loadData = async () => {
+    setLoading(true)
+    setError('')
 
-  const reports = [
-    {
-      id: '#REP-8842',
-      reporter: 'Alex Rivera',
-      targetUser: 'User99_Alpha',
-      reason: 'Spam Content',
-      status: 'OPEN',
-    },
-    {
-      id: '#REP-8841',
-      reporter: 'Jordan Smith',
-      targetUser: 'CryptoDev_42',
-      reason: 'Harassment',
-      status: 'RESOLVED',
-    },
-    {
-      id: '#REP-8840',
-      reporter: 'Taylor Case',
-      targetUser: 'User_Vault_12',
-      reason: 'Inappropriate Data',
-      status: 'OPEN',
-    },
-  ]
+    try {
+      const [dashboardData, usersData] = await Promise.all([
+        adminService.getDashboard(),
+        adminService.listUsers(),
+      ])
 
-  const logs = [
-    {
-      timestamp: '2023-11-24 14:02:11',
-      level: 'INFO',
-      message: 'User "Alex Rivera" submitted report #REP-8842. Attachment hash verified.',
-    },
-    {
-      timestamp: '2023-11-24 14:02:15',
-      level: 'INFO',
-      message: 'Portfolio Aggregator: Synchronized 142 API endpoints successfully.',
-    },
-    {
-      timestamp: '2023-11-24 14:03:01',
-      level: 'WARN',
-      message: 'High latency detected in cluster region US-EAST-1. Load balancer re-routing...',
-    },
-    {
-      timestamp: '2023-11-24 14:04:45',
-      level: 'ERROR',
-      message: 'Failed to process payment for account #GF-9921. Gateway timeout.',
-    },
-    {
-      timestamp: '2023-11-24 14:05:12',
-      level: 'INFO',
-      message: 'Worker thread #41 initialized for background data scrubbing.',
-    },
-    {
-      timestamp: '2023-11-24 14:06:33',
-      level: 'INFO',
-      message: 'Admin authentication successful. IP: 192.168.1.104',
-    },
-    {
-      timestamp: '2023-11-24 14:07:01',
-      level: 'ERROR',
-      message: 'Unauthorized attempt to access /admin/security/vault. Logged for review.',
-    },
-    {
-      timestamp: '2023-11-24 14:08:12',
-      level: 'INFO',
-      message: 'System health check: 99.8% uptime. All services operational.',
-    },
-  ]
+      setDashboard(dashboardData || null)
+      setUsers(Array.isArray(usersData) ? usersData : [])
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load governance data.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const inactiveUsers = useMemo(() => users.filter((user) => !user.is_active), [users])
+  const activeUsers = useMemo(() => users.filter((user) => user.is_active), [users])
+
+  const kpis = useMemo(
+    () => [
+      { icon: '👥', label: 'Total Users', value: Number(dashboard?.total_users || 0) },
+      {
+        icon: '✅',
+        label: 'Active Users (7 Days)',
+        value: Number(dashboard?.active_users_last_7_days || 0),
+      },
+      { icon: '🚫', label: 'Inactive Users', value: inactiveUsers.length },
+    ],
+    [dashboard, inactiveUsers.length]
+  )
+
+  const operationalLogs = useMemo(
+    () => [
+      {
+        timestamp: new Date().toLocaleString(),
+        level: 'INFO',
+        message: `Total projects in platform: ${Number(dashboard?.total_projects || 0)}`,
+      },
+      {
+        timestamp: new Date().toLocaleString(),
+        level: 'INFO',
+        message: `Total profile views tracked: ${Number(dashboard?.total_profile_views || 0)}`,
+      },
+      {
+        timestamp: new Date().toLocaleString(),
+        level: inactiveUsers.length > 0 ? 'WARN' : 'INFO',
+        message:
+          inactiveUsers.length > 0
+            ? `${inactiveUsers.length} inactive user account(s) detected.`
+            : 'No inactive user accounts detected.',
+      },
+    ],
+    [dashboard, inactiveUsers.length]
+  )
 
   return (
     <AdminLayout>
-      <div className="flex flex-col h-full overflow-y-auto bg-slate-50">
-        {/* Header */}
-        <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0">
-          <h2 className="text-xl font-display font-bold text-primary">Governance Oversight</h2>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-              🔔
-            </button>
-            <div className="h-8 w-px bg-slate-200"></div>
-            <span className="text-sm font-medium text-slate-500">Last System Update: 2m ago</span>
-          </div>
+      <div className="flex h-full flex-col overflow-y-auto bg-slate-50">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
+          <h2 className="text-xl font-bold text-primary">Governance Oversight</h2>
+          <span className="text-sm font-medium text-slate-500">Live admin backend data</span>
         </header>
 
-        <div className="p-8 space-y-8">
-          {/* KPI Summary Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {kpiData.map((kpi, index) => (
-              <KPICard key={index} icon={kpi.icon} label={kpi.label} value={kpi.value} />
-            ))}
-          </div>
-
-          {/* Tabs & Table Section */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="border-b border-slate-100 px-6">
-              <div className="flex gap-8">
-                <button
-                  onClick={() => setActiveTab('user-reports')}
-                  className={`py-4 border-b-2 text-sm font-bold flex items-center gap-2 transition-colors ${
-                    activeTab === 'user-reports'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <span>👤</span>User Reports
-                </button>
-                <button
-                  onClick={() => setActiveTab('abuse-reports')}
-                  className={`py-4 border-b-2 text-sm font-bold flex items-center gap-2 transition-colors ${
-                    activeTab === 'abuse-reports'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <span>⚠️</span>Abuse Reports
-                </button>
-              </div>
+        <div className="space-y-8 p-8">
+          {loading ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-10">
+              <Loading message="Loading governance data..." />
             </div>
+          ) : error ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-6">
+              <ErrorState message={error} onRetry={loadData} />
+            </div>
+          ) : !dashboard && users.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-6">
+              <EmptyState message="No governance data available." />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                {kpis.map((kpi) => (
+                  <KPICard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} />
+                ))}
+              </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Report ID
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Reporter
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Target User
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Reason
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {reports.map((report, index) => (
-                    <ReportRow key={index} report={report} />
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-100 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-slate-900">Inactive Accounts Review Queue</h3>
+                </div>
+
+                {inactiveUsers.length === 0 ? (
+                  <div className="p-6">
+                    <EmptyState message="No inactive accounts to review." />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left">
+                      <thead>
+                        <tr className="bg-slate-50/50">
+                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">User</th>
+                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Email</th>
+                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Role</th>
+                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {inactiveUsers.map((user) => (
+                          <tr key={user.id} className="transition-colors hover:bg-slate-50/50">
+                            <td className="px-6 py-4 text-sm font-medium text-slate-900">{getDisplayName(user)}</td>
+                            <td className="px-6 py-4 text-sm text-slate-600">{user.email || '-'}</td>
+                            <td className="px-6 py-4 text-sm text-slate-600">{resolveRole(user)}</td>
+                            <td className="px-6 py-4">
+                              <StatusBadge active={user.is_active} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex h-96 flex-col overflow-hidden rounded-xl border border-primary bg-primary shadow-2xl">
+                <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-white/5 px-6 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">💻</span>
+                    <span className="text-sm font-bold uppercase tracking-wide text-white">Operational Snapshot Logs</span>
+                  </div>
+                  <span className="text-xs text-white/70">Active users loaded: {activeUsers.length}</span>
+                </div>
+
+                <div className="flex-1 space-y-2 overflow-y-auto bg-[#1A0D26] p-6 font-mono text-sm">
+                  {operationalLogs.map((log, index) => (
+                    <div key={index} className="flex gap-4">
+                      <span className="shrink-0 text-white/30">{log.timestamp}</span>
+                      <span className={`shrink-0 font-bold ${log.level === 'WARN' ? 'text-accent' : 'text-green-400'}`}>
+                        [{log.level}]
+                      </span>
+                      <span className="text-white/80">{log.message}</span>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Technical Logs Section */}
-          <div className="bg-primary rounded-xl border border-primary shadow-2xl overflow-hidden flex flex-col h-96">
-            {/* Log Header */}
-            <div className="px-6 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="text-lg">💻</span>
-                <span className="text-white text-sm font-bold font-display tracking-wide uppercase">
-                  Real-Time System Logs
-                </span>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
-                <div className="w-3 h-3 rounded-full bg-accent/50"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
-              </div>
-            </div>
-
-            {/* Log Content */}
-            <div className="flex-1 overflow-y-auto p-6 font-mono text-sm space-y-2 bg-[#1A0D26]">
-              {logs.map((log, index) => (
-                <LogEntry key={index} timestamp={log.timestamp} level={log.level} message={log.message} />
-              ))}
-            </div>
-
-            {/* Log Footer */}
-            <div className="px-6 py-3 bg-white/5 border-t border-white/10 flex items-center shrink-0">
-              <span className="text-white/40 text-xs font-mono">_ root@growfolio-prod: tail -f /var/log/syslog</span>
-              <span className="w-2 h-4 bg-accent ml-2 animate-pulse"></span>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </AdminLayout>

@@ -342,8 +342,8 @@ export default function AccountSettingsPage() {
         <footer className="mt-12 py-6 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
           <p>© 2024 GrowFolio Systems Inc. All rights reserved.</p>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+            <span>Privacy Policy</span>
+            <span>Terms of Service</span>
           </div>
         </footer>
       </main>

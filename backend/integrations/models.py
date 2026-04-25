@@ -1,11 +1,21 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from .crypto_utils import decrypt_access_token, encrypt_access_token
 
 
 class ConnectedSource(models.Model):
     unique_together = ["user", "source_name"]
+
+    ALLOWED_SOURCE_NAMES = (
+        "github",
+        "gitlab",
+        "devto",
+        "youtube",
+        "stackexchange",
+        "codeforces",
+    )
 
     CONNECTION_TYPES = [
         ("oauth", "OAuth"),
@@ -18,11 +28,10 @@ class ConnectedSource(models.Model):
         ("github", "GitHub"),
         ("gitlab", "GitLab"),
         ("devto", "Dev.to"),
-        ("hashnode", "Hashnode"),
+        ("youtube", "YouTube"),
         ("stackexchange", "StackExchange"),
         ("codeforces", "Codeforces"),
-        ("orcid", "ORCID"),
-        ("youtube", "YouTube"),
+        ("hashnode", "Hashnode"),  
     ]
 
     SYNC_STATUS = [
@@ -69,6 +78,12 @@ class ConnectedSource(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
+        if isinstance(self.source_name, str):
+            self.source_name = self.source_name.strip().lower()
+
+        if self.source_name not in self.ALLOWED_SOURCE_NAMES:
+            raise ValidationError({"source_name": "Invalid source_name"})
+
         if self.access_token and not self.access_token.startswith("gAAAA"):
             self.access_token = encrypt_access_token(self.access_token)
 

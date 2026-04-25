@@ -31,17 +31,9 @@ export const projectService = {
   },
 
   importGithubProjects: async () => {
-    const response = await apiClient.post('/projects/import-github/')
+    const response = await apiClient.post('/integrations/github/sync/')
     return response.data
   },
 
-  getPublicProject: async (projectId) => {
-    const response = await apiClient.get(`/projects/public/projects/${projectId}/`)
-    return response.data
-  },
-
-  toggleVisibility: async (projectId, payload) => {
-    const response = await apiClient.patch(`/projects/toggle/${projectId}/`, payload)
-    return response.data
-  },
+  // reserved for future use: public project detail and visibility toggle endpoints
 }

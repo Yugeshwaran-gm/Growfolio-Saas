@@ -6,11 +6,12 @@ import { Loading } from '../../components/ui/Loading'
 import { ErrorState } from '../../components/ui/States'
 import Button from '../../components/ui/Button'
 import { analyticsService } from '../../services/analyticsService'
+import { integrationService } from '../../services/integrationService'
 
 // Stat Card Component
-function StatCard({ icon, label, value, badge, badgeColor }) {
+function StatCard({ icon, label, value, badge, badgeColor, isPreview = false, previewNote = '' }) {
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+    <div className={`bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-shadow ${isPreview ? 'opacity-80' : 'hover:shadow-md'}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="p-2 bg-primary-500/10 rounded-lg text-primary-500">
           {icon}
@@ -22,6 +23,9 @@ function StatCard({ icon, label, value, badge, badgeColor }) {
         )}
       </div>
       <p className="text-slate-500 text-sm font-medium">{label}</p>
+      {isPreview && previewNote ? (
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{previewNote}</p>
+      ) : null}
       <p className="text-3xl font-black text-slate-900 mt-1">
         {value}
         <span className="text-accent-500 text-lg">.</span>
@@ -30,67 +34,40 @@ function StatCard({ icon, label, value, badge, badgeColor }) {
   )
 }
 
-// Activity Item Component
-function ActivityItem({ icon, title, time, platform, badge }) {
-  const badgeColors = {
-    G: 'bg-black',
-    M: 'bg-blue-600',
-    L: 'bg-orange-500',
+function ComingSoonNotice({ message }) {
+  return (
+    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5">
+      <p className="text-sm font-semibold text-slate-700">Coming soon</p>
+      <p className="mt-1 text-sm text-slate-500">{message}</p>
+    </div>
+  )
+}
+
+function formatSyncTime(value) {
+  if (!value) {
+    return 'Not synced yet'
   }
 
-  return (
-    <div className="flex gap-4">
-      <div className="relative">
-        <div className="w-10 h-10 rounded-full bg-primary-500/5 flex items-center justify-center text-primary-500">
-          {icon}
-        </div>
-        <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${badgeColors[badge] || 'bg-slate-400'} text-white rounded-full p-0.5 shadow-sm flex items-center justify-center text-[10px] font-bold`}>
-          {badge}
-        </div>
-      </div>
-      <div>
-        <p className="text-sm text-slate-800">{title}</p>
-        <p className="text-xs text-slate-400 mt-1">{time} • {platform}</p>
-      </div>
-    </div>
-  )
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Not synced yet'
+  }
+
+  return parsed.toLocaleString()
 }
 
-// Integration Status Item Component
-function IntegrationItem({ name, initials, isConnected, bgColor }) {
-  return (
-    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded ${bgColor} text-white flex items-center justify-center font-black text-xs`}>
-          {initials}
-        </div>
-        <p className="text-sm font-bold">{name}</p>
-      </div>
-      {isConnected ? (
-        <div className="flex items-center gap-1.5 text-emerald-600">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-bold uppercase">Connected</span>
-        </div>
-      ) : (
-        <span className="text-xs font-bold uppercase text-slate-400">Not Connected</span>
-      )}
-    </div>
-  )
-}
-
-// Platform Connect Card Component
-function PlatformCard({ name, initials, bgColor }) {
-  return (
-    <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 flex items-center gap-6 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 ${bgColor} rounded-full flex items-center justify-center text-white font-bold text-xs uppercase`}>
-          {initials}
-        </div>
-        <span className="text-sm font-bold text-slate-700">{name}</span>
-      </div>
-      <Button variant="accent" size="sm">Connect</Button>
-    </div>
-  )
+function getIntegrationBadgeStyle(status) {
+  const normalized = (status || '').toLowerCase()
+  if (normalized === 'connected') {
+    return 'bg-emerald-50 text-emerald-700'
+  }
+  if (normalized === 'pending') {
+    return 'bg-amber-50 text-amber-700'
+  }
+  if (normalized === 'failed') {
+    return 'bg-red-50 text-red-700'
+  }
+  return 'bg-slate-100 text-slate-600'
 }
 
 export default function DashboardPage() {
@@ -98,8 +75,11 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [analytics, setAnalytics] = useState({ profile_views: 0, project_views: 0 })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [analyticsLoading, setAnalyticsLoading] = useState(true)
+  const [analyticsError, setAnalyticsError] = useState('')
+  const [integrations, setIntegrations] = useState([])
+  const [integrationsLoading, setIntegrationsLoading] = useState(true)
+  const [integrationsError, setIntegrationsError] = useState('')
   const displayName = user?.full_name || user?.first_name || 'User'
 
   const statCards = [
@@ -121,46 +101,28 @@ export default function DashboardPage() {
       icon: '💻',
       label: 'Dashboard Status',
       value: 'Live',
-      badge: 'Active',
-      badgeColor: 'text-slate-400 text-xs font-medium bg-slate-100 px-2 py-1 rounded-full',
+      badge: 'Preview',
+      badgeColor: 'text-slate-500 text-xs font-bold bg-slate-100 px-2 py-1 rounded-full',
+      isPreview: true,
+      previewNote: 'Static preview',
     },
     {
       icon: '⚙️',
       label: 'Portfolio Overview',
       value: 'Synced',
-      badge: 'OK',
-      badgeColor: 'text-accent-500 text-xs font-bold bg-accent-500/10 px-2 py-1 rounded-full',
-    },
-  ]
-
-  const activityItems = [
-    {
-      icon: '📝',
-      title: 'New repository pushed: "saas-dashboard-template" to GitHub',
-      time: '2 hours ago',
-      platform: 'Repository',
-      badge: 'G',
-    },
-    {
-      icon: '✏️',
-      title: 'Article draft updated: "Mastering Tailwind CSS v4"',
-      time: '5 hours ago',
-      platform: 'Medium',
-      badge: 'M',
-    },
-    {
-      icon: '🏆',
-      title: 'Solved problem: "Trapping Rain Water" (Hard)',
-      time: 'Yesterday',
-      platform: 'LeetCode',
-      badge: 'L',
+      badge: 'Preview',
+      badgeColor: 'text-slate-500 text-xs font-bold bg-slate-100 px-2 py-1 rounded-full',
+      isPreview: true,
+      previewNote: 'Static preview',
     },
   ]
 
   useEffect(() => {
-    const loadAnalytics = async () => {
-      setLoading(true)
-      setError('')
+    const loadDashboardData = async () => {
+      setAnalyticsLoading(true)
+      setAnalyticsError('')
+      setIntegrationsLoading(true)
+      setIntegrationsError('')
 
       try {
         const data = await analyticsService.getDashboard()
@@ -169,13 +131,22 @@ export default function DashboardPage() {
           project_views: data?.project_views ?? 0,
         })
       } catch (err) {
-        setError(err.response?.data?.detail || 'Failed to load dashboard analytics.')
+        setAnalyticsError(err.response?.data?.detail || 'Failed to load dashboard analytics.')
       } finally {
-        setLoading(false)
+        setAnalyticsLoading(false)
+      }
+
+      try {
+        const integrationData = await integrationService.getIntegrations()
+        setIntegrations(Array.isArray(integrationData) ? integrationData : [])
+      } catch (err) {
+        setIntegrationsError(err.response?.data?.error || 'Failed to load integrations.')
+      } finally {
+        setIntegrationsLoading(false)
       }
     }
 
-    loadAnalytics()
+    loadDashboardData()
   }, [])
 
   return (
@@ -241,13 +212,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Cards Grid */}
-          {loading ? (
+          {analyticsLoading ? (
             <div className="rounded-xl border border-slate-200 bg-white p-10">
               <Loading message="Loading dashboard analytics..." />
             </div>
-          ) : error ? (
+          ) : analyticsError ? (
             <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <ErrorState message={error} onRetry={() => window.location.reload()} />
+              <ErrorState message={analyticsError} onRetry={() => window.location.reload()} />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -259,6 +230,8 @@ export default function DashboardPage() {
                   value={stat.value}
                   badge={stat.badge}
                   badgeColor={stat.badgeColor}
+                  isPreview={stat.isPreview}
+                  previewNote={stat.previewNote}
                 />
               ))}
             </div>
@@ -269,47 +242,42 @@ export default function DashboardPage() {
             {/* Recent Activity Feed */}
             <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-lg text-primary-500">Mock Activity Feed</h3>
-                <button className="text-primary-500 text-sm font-bold hover:underline">View all</button>
+                <h3 className="font-bold text-lg text-primary-500">Activity Feed</h3>
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600 uppercase">Coming soon</span>
               </div>
               <div className="p-6 space-y-6">
-                {activityItems.map((item, index) => (
-                  <ActivityItem
-                    key={index}
-                    icon={item.icon}
-                    title={item.title}
-                    time={item.time}
-                    platform={item.platform}
-                    badge={item.badge}
-                  />
-                ))}
+                <ComingSoonNotice message="Real activity events will appear here once timeline tracking is available." />
               </div>
             </div>
 
             {/* Integration Status */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
-              <div className="p-6 border-b border-slate-100">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="font-bold text-lg text-primary-500">Integration Status</h3>
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-primary-500/10 text-primary-500 uppercase">
+                  Live
+                </span>
               </div>
               <div className="p-6 space-y-4">
-                <IntegrationItem
-                  name="GitHub"
-                  initials="GH"
-                  isConnected={true}
-                  bgColor="bg-black"
-                />
-                <IntegrationItem
-                  name="Medium"
-                  initials="M"
-                  isConnected={false}
-                  bgColor="bg-blue-600"
-                />
-                <IntegrationItem
-                  name="LeetCode"
-                  initials="LC"
-                  isConnected={true}
-                  bgColor="bg-orange-600"
-                />
+                {integrationsLoading ? (
+                  <Loading message="Loading integration status..." />
+                ) : integrationsError ? (
+                  <ErrorState message={integrationsError} onRetry={() => window.location.reload()} />
+                ) : integrations.length === 0 ? (
+                  <p className="text-sm text-slate-500">No integrations connected yet.</p>
+                ) : (
+                  integrations.slice(0, 3).map((integration) => (
+                    <div key={integration.id} className="rounded-lg border border-slate-200 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-slate-800">{integration.source_name}</p>
+                        <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getIntegrationBadgeStyle(integration.sync_status)}`}>
+                          {integration.sync_status || 'unknown'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">Last sync: {formatSyncTime(integration.last_sync)}</p>
+                    </div>
+                  ))
+                )}
                 <Button
                   variant="secondary"
                   className="w-full"
@@ -325,13 +293,19 @@ export default function DashboardPage() {
           <div className="bg-primary-500/5 rounded-2xl p-8 border border-primary-500/10">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div>
+                <div className="flex items-center gap-2">
                 <h3 className="text-xl font-bold text-primary-500">Quick Connect</h3>
-                <p className="text-slate-600 text-sm">Expand your portfolio by syncing more platforms instantly.</p>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600 uppercase">Coming soon</span>
+                </div>
+                <p className="text-slate-600 text-sm">More one-click connectors will be available in a future update.</p>
               </div>
-              <div className="flex flex-wrap items-center gap-4">
-                <PlatformCard name="Dev.to" initials="Dev" bgColor="bg-slate-900" />
-                <PlatformCard name="Hashnode" initials="H" bgColor="bg-blue-500" />
-                <PlatformCard name="arXiv" initials="arXiv" bgColor="bg-red-600" />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate('/dashboard/integrations')}
+                >
+                  Open Integrations
+                </Button>
               </div>
             </div>
           </div>

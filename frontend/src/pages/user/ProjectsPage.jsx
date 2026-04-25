@@ -5,23 +5,53 @@ import Button from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/States'
 import { Alert } from '../../components/ui/States'
 import { projectService } from '../../services/projectService'
+import { integrationService } from '../../services/integrationService'
+
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'Not synced yet'
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Not synced yet'
+  }
+
+  return parsed.toLocaleString()
+}
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([])
+  const [githubIntegration, setGithubIntegration] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [importFeedback, setImportFeedback] = useState(null)
-  const [importing, setImporting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [connecting, setConnecting] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
 
+  const loadGithubIntegration = async () => {
+    const integrations = await integrationService.getIntegrations()
+    const github = integrations.find((item) => (item?.source_name || '').toLowerCase() === 'github')
+    setGithubIntegration(github || null)
+  }
+
   useEffect(() => {
-    const loadProjects = async () => {
+    const loadData = async () => {
       setLoading(true)
       setError('')
 
       try {
-        const data = await projectService.listProjects()
-        setProjects(data)
+        const [projectsData, integrations] = await Promise.all([
+          projectService.listProjects(),
+          integrationService.getIntegrations(),
+        ])
+
+        setProjects(projectsData)
+
+        const github = integrations.find((item) => (item?.source_name || '').toLowerCase() === 'github')
+        setGithubIntegration(github || null)
       } catch (err) {
         setError(err.response?.data?.detail || 'Failed to load projects.')
       } finally {
@@ -29,7 +59,7 @@ export default function ProjectsPage() {
       }
     }
 
-    loadProjects()
+    loadData()
   }, [])
 
   const normalizeTags = (techStack) => {
@@ -49,44 +79,74 @@ export default function ProjectsPage() {
     setProjects(data)
   }
 
-  const handleImportGitHub = async () => {
-    setImporting(true)
+  const handleSyncGitHub = async () => {
+    setSyncing(true)
     setError('')
     setImportFeedback(null)
 
     try {
-      const response = await projectService.importGithubProjects()
+      const response = await integrationService.syncIntegration('github')
 
-      if (response?.success === false || response?.error) {
-        setError(response?.error || 'Failed to import GitHub projects.')
+      if (response?.status !== 'completed') {
+        setError(response?.error || 'Failed to sync GitHub projects.')
         return
       }
 
-      const createdProjects = Array.isArray(response?.created_projects)
-        ? response.created_projects
-        : []
+      const createdCount = Number(response?.created || 0)
+      const updatedCount = Number(response?.updated || 0)
+      const totalChanged = createdCount + updatedCount
 
       await reloadProjects()
 
-      if (createdProjects.length > 0) {
+      if (totalChanged > 0) {
         setImportFeedback({
           type: 'success',
-          message: `Imported ${createdProjects.length} project${createdProjects.length === 1 ? '' : 's'} from GitHub.`,
+          message: `GitHub sync completed. Created ${createdCount} and updated ${updatedCount} project${totalChanged === 1 ? '' : 's'}.`,
         })
       } else {
         setImportFeedback({
           type: 'info',
-          message: 'No new GitHub projects were imported. Your projects are already up to date.',
+          message: 'GitHub sync completed. No project changes were required.',
         })
       }
+
+      await loadGithubIntegration()
     } catch (err) {
       setError(
         err.response?.data?.error ||
         err.response?.data?.detail ||
-        'Failed to import GitHub projects.'
+        'Failed to sync GitHub projects.'
       )
     } finally {
-      setImporting(false)
+      setSyncing(false)
+    }
+  }
+
+  const handleConnectGitHub = async () => {
+    setConnecting(true)
+    setError('')
+    setImportFeedback(null)
+
+    try {
+      const response = await integrationService.connectIntegration({
+        source_name: 'github',
+      })
+
+      if (response?.success === false) {
+        setError(response?.error || 'Failed to connect GitHub integration.')
+        return
+      }
+
+      await loadGithubIntegration()
+      await handleSyncGitHub()
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        'Failed to connect GitHub integration.'
+      )
+    } finally {
+      setConnecting(false)
     }
   }
 
@@ -115,10 +175,30 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Projects</h1>
           <p className="text-slate-600">Manage your portfolio projects</p>
+          <p className="mt-2 text-sm text-slate-500">
+            Connection status:{' '}
+            <span className="font-semibold text-slate-700">
+              {githubIntegration ? 'Connected' : 'Not connected'}
+            </span>
+            {' | '}Sync status:{' '}
+            <span className="font-semibold text-slate-700">
+              {githubIntegration?.sync_status || 'Not synced'}
+            </span>
+            {' | '}Last sync:{' '}
+            <span className="font-semibold text-slate-700">
+              {formatDateTime(githubIntegration?.last_sync)}
+            </span>
+          </p>
         </div>
-        <Button variant="primary" onClick={handleImportGitHub} disabled={importing}>
-          {importing ? 'Importing...' : 'Import from GitHub'}
-        </Button>
+        {githubIntegration ? (
+          <Button variant="primary" onClick={handleSyncGitHub} disabled={syncing || connecting}>
+            {syncing ? 'Syncing...' : 'Sync Now'}
+          </Button>
+        ) : (
+          <Button variant="primary" onClick={handleConnectGitHub} disabled={connecting || syncing}>
+            {connecting ? 'Connecting...' : 'Connect GitHub'}
+          </Button>
+        )}
       </div>
 
       {importFeedback && !error && (
@@ -189,7 +269,17 @@ export default function ProjectsPage() {
           <CardBody>
             <EmptyState 
               message="No projects yet. Import from GitHub or create one in the backend."
-              action={<Button variant="primary" onClick={handleImportGitHub} disabled={importing}>{importing ? 'Importing...' : 'Import GitHub Projects'}</Button>}
+              action={
+                githubIntegration ? (
+                  <Button variant="primary" onClick={handleSyncGitHub} disabled={syncing || connecting}>
+                    {syncing ? 'Syncing...' : 'Sync GitHub Projects'}
+                  </Button>
+                ) : (
+                  <Button variant="primary" onClick={handleConnectGitHub} disabled={connecting || syncing}>
+                    {connecting ? 'Connecting...' : 'Connect GitHub'}
+                  </Button>
+                )
+              }
             />
           </CardBody>
         </Card>

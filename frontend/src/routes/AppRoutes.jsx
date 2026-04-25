@@ -9,6 +9,7 @@ import SetNewPassword from '../pages/auth/SetNewPassword'
 
 // Public Pages
 import HomePage from '../pages/public/HomePage'
+import PublicPortfolio from '../pages/public/PublicPortfolio'
 import NotFoundPage from '../pages/public/NotFoundPage'
 
 // User Pages
@@ -29,12 +30,16 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import UsersPage from '../pages/admin/UsersPage'
 import UserManagementPage from '../pages/admin/UserManagementPage'
 import AdminReportsLogsPage from '../pages/admin/AdminReportsLogsPage'
+import AdminContentPage from '../pages/admin/AdminContentPage'
+import AdminAnalyticsPage from '../pages/admin/AdminAnalyticsPage'
+import AdminSettingsPage from '../pages/admin/AdminSettingsPage'
 
 export function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/portfolio/:username" element={<PublicPortfolio />} />
       
       {/* Auth Routes */}
       <Route
@@ -63,6 +68,14 @@ export function AppRoutes() {
       />
       <Route
         path="/set-new-password"
+        element={
+          <PublicRoute>
+            <SetNewPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reset-password/:token"
         element={
           <PublicRoute>
             <SetNewPassword />
@@ -199,6 +212,30 @@ export function AppRoutes() {
         element={
           <AdminRoute>
             <AdminReportsLogsPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/content"
+        element={
+          <AdminRoute>
+            <AdminContentPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <AdminRoute>
+            <AdminAnalyticsPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <AdminRoute>
+            <AdminSettingsPage />
           </AdminRoute>
         }
       />

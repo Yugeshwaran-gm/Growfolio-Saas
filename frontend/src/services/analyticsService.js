@@ -6,10 +6,6 @@ export const analyticsService = {
     return response.data
   },
 
-  getDashboardAnalytics: async () => {
-    return analyticsService.getDashboard()
-  },
-
   getExploreProfiles: async (params = {}) => {
     const response = await apiClient.get('/explore/profiles/', { params })
     return response.data

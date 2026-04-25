@@ -1,17 +1,57 @@
 import requests
+import logging
 from projects.models import Project
+
+logger = logging.getLogger(__name__)
+
+
+def _raise_github_http_error(response):
+    if response.status_code == 404:
+        raise Exception("Invalid GitHub username")
+
+    if response.status_code == 403:
+        remaining = response.headers.get("X-RateLimit-Remaining")
+        if remaining == "0":
+            raise Exception("GitHub API rate limit exceeded")
+
+        try:
+            payload = response.json()
+            message = str(payload.get("message", "")).lower()
+            if "rate limit" in message:
+                raise Exception("GitHub API rate limit exceeded")
+        except ValueError:
+            pass
+
+    raise Exception("GitHub service unavailable")
 
 
 def fetch_github_repos(user, username):
 
+    normalized_username = (username or "").strip()
+    logger.info("GitHub sync started for username=%s", normalized_username or "<empty>")
+
     url = f"https://api.github.com/users/{username}/repos"
 
-    response = requests.get(url, timeout=10)
+    try:
+        response = requests.get(url, timeout=5)
+    except requests.RequestException as exc:
+        logger.exception("GitHub request failed for username=%s", normalized_username or "<empty>")
+        raise Exception("GitHub service unavailable") from exc
+
+    logger.info(
+        "GitHub API response for username=%s status_code=%s body=%s",
+        normalized_username or "<empty>",
+        response.status_code,
+        (response.text or "")[:2000],
+    )
 
     if response.status_code != 200:
-        raise Exception("GitHub API error")
+        _raise_github_http_error(response)
 
-    repos = response.json()
+    try:
+        repos = response.json()
+    except ValueError as exc:
+        raise Exception("GitHub service unavailable") from exc
 
     created = 0
     updated = 0

@@ -10,9 +10,7 @@ export const notificationService = {
     return unwrapListResponse(response.data)
   },
 
-  listNotifications: async () => {
-    return notificationService.getNotifications()
-  },
+  // reserved for future use: listNotifications alias
 
   markAsRead: async (notificationId) => {
     const response = await apiClient.patch(`/notifications/${notificationId}/read/`)

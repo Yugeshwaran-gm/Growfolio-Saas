@@ -44,15 +44,15 @@ export default function ForgotPasswordPage() {
         
         <div className="hidden md:flex items-center gap-8">
           <nav className="flex items-center gap-8">
-            <a href="#" className="text-slate-600 hover:text-primary-500 text-sm font-semibold transition-colors">
+            <span className="text-slate-600 text-sm font-semibold">
               Features
-            </a>
-            <a href="#" className="text-slate-600 hover:text-primary-500 text-sm font-semibold transition-colors">
+            </span>
+            <span className="text-slate-600 text-sm font-semibold">
               Pricing
-            </a>
-            <a href="#" className="text-slate-600 hover:text-primary-500 text-sm font-semibold transition-colors">
+            </span>
+            <span className="text-slate-600 text-sm font-semibold">
               About
-            </a>
+            </span>
           </nav>
           <Link to="/login">
             <button className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-primary-500/20">
@@ -150,9 +150,7 @@ export default function ForgotPasswordPage() {
           {/* Footer Help */}
           <p className="mt-8 text-center text-slate-400 text-sm">
             Need more help?{' '}
-            <a href="#" className="text-primary-500 font-semibold hover:underline">
-              Contact Support
-            </a>
+            <span className="text-primary-500 font-semibold">Contact Support</span>
           </p>
         </div>
       </main>
@@ -161,15 +159,9 @@ export default function ForgotPasswordPage() {
       <footer className="py-8 px-6 text-center border-t border-primary-500/5">
         <div className="flex flex-col items-center gap-4">
           <div className="flex gap-6">
-            <a href="#" className="text-xs text-slate-400 hover:text-primary-500 font-medium transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="text-xs text-slate-400 hover:text-primary-500 font-medium transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="text-xs text-slate-400 hover:text-primary-500 font-medium transition-colors">
-              Security
-            </a>
+            <span className="text-xs text-slate-400 font-medium">Privacy Policy</span>
+            <span className="text-xs text-slate-400 font-medium">Terms of Service</span>
+            <span className="text-xs text-slate-400 font-medium">Security</span>
           </div>
           <p className="text-xs text-slate-400">© 2026 GrowFolio. All rights reserved.</p>
         </div>

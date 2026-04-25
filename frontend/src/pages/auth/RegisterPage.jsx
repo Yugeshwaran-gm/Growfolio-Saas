@@ -270,13 +270,9 @@ export default function RegisterPage() {
           <div className="border-t border-slate-100 bg-primary-50/50 px-6 py-5 text-center sm:px-8">
             <p className="text-sm text-slate-500">
               By clicking "Create Account", you agree to our{' '}
-              <a href="#" className="font-medium text-primary-500 hover:underline">
-                Terms of Service
-              </a>{' '}
+              <span className="font-medium text-primary-500">Terms of Service</span>{' '}
               and{' '}
-              <a href="#" className="font-medium text-primary-500 hover:underline">
-                Privacy Policy
-              </a>
+              <span className="font-medium text-primary-500">Privacy Policy</span>
               .
             </p>
           </div>

@@ -1,3 +1,5 @@
+// FUTURE PAGE (UNROUTED): Archived from /pages/admin because it is not currently mounted in AppRoutes.
+// Keep this file for future admin API health/log UI work. Do not import until a route is added.
 import { useMemo, useState } from 'react'
 import { AdminLayout } from '../../layouts/AdminLayout'
 

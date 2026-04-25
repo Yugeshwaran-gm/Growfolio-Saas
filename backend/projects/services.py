@@ -1,40 +1,17 @@
-import requests
+"""Deprecated module.
 
-GITHUB_API = "https://api.github.com/users/{username}/repos"
+GitHub project ingestion now runs exclusively through integrations sync:
+`/api/integrations/github/sync/` using `integrations/services/github_service.py`.
+"""
 
 
-def fetch_github_repos(username):
-    url = GITHUB_API.format(username=username)
+def fetch_github_repos(*args, **kwargs):
+    raise RuntimeError(
+        "Deprecated: use integrations sync pipeline `/api/integrations/github/sync/`."
+    )
 
-    response = requests.get(url)
 
-    if response.status_code != 200:
-        return []
-
-    repos = response.json()
-
-    projects = []
-
-    for repo in repos:
-        languages = fetch_repo_languages(username, repo["name"])
-        projects.append({
-            "title": repo["name"],
-            "description": repo["description"] or "",
-            "project_url": repo["html_url"],
-            "tech_stack": languages
-        })
-
-    return projects
-
-def fetch_repo_languages(owner, repo):
-
-    url = f"https://api.github.com/repos/{owner}/{repo}/languages"
-
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        return []
-
-    languages = response.json()
-
-    return list(languages.keys())
+def fetch_repo_languages(*args, **kwargs):
+    raise RuntimeError(
+        "Deprecated: use integrations sync pipeline `/api/integrations/github/sync/`."
+    )

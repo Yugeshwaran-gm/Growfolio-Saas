@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import { Card } from '../../components/ui/Card'
@@ -8,7 +8,7 @@ import { authService } from '../../services/authService'
 import { validatePasswordStrength } from '../../utils/helpers'
 
 export default function SetNewPassword() {
-  const [searchParams] = useSearchParams()
+  const { token } = useParams()
   const navigate = useNavigate()
   
   const [formData, setFormData] = useState({
@@ -21,8 +21,6 @@ export default function SetNewPassword() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState(0)
-
-  const token = searchParams.get('token')
 
   const handlePasswordChange = (e) => {
     const password = e.target.value
@@ -100,15 +98,15 @@ export default function SetNewPassword() {
 
         <div className="hidden md:flex flex-1 justify-end gap-8 items-center">
           <nav className="flex items-center gap-8">
-            <a href="#" className="text-slate-600 hover:text-primary-500 transition-colors text-sm font-medium">
+            <Link to="/dashboard" className="text-slate-600 hover:text-primary-500 transition-colors text-sm font-medium">
               Dashboard
-            </a>
-            <a href="#" className="text-slate-600 hover:text-primary-500 transition-colors text-sm font-medium">
+            </Link>
+            <span className="text-slate-600 text-sm font-medium">
               Portfolios
-            </a>
-            <a href="#" className="text-slate-600 hover:text-primary-500 transition-colors text-sm font-medium">
+            </span>
+            <span className="text-slate-600 text-sm font-medium">
               Market
-            </a>
+            </span>
           </nav>
           <div className="w-10 h-10 rounded-full border-2 border-primary-500/20 bg-primary-500/10 flex items-center justify-center overflow-hidden">
             <div className="w-full h-full bg-gradient-to-br from-primary-500 to-accent-500" />
@@ -242,15 +240,9 @@ export default function SetNewPassword() {
       <footer className="py-6 px-10 flex flex-col md:flex-row justify-between items-center bg-white border-t border-primary-500/5">
         <p className="text-slate-400 text-xs">© 2026 GrowFolio. All rights reserved.</p>
         <div className="flex gap-6 mt-4 md:mt-0">
-          <a href="#" className="text-slate-400 hover:text-primary-500 text-xs transition-colors">
-            Privacy Policy
-          </a>
-          <a href="#" className="text-slate-400 hover:text-primary-500 text-xs transition-colors">
-            Terms of Service
-          </a>
-          <a href="#" className="text-slate-400 hover:text-primary-500 text-xs transition-colors">
-            Support
-          </a>
+          <span className="text-slate-400 text-xs">Privacy Policy</span>
+          <span className="text-slate-400 text-xs">Terms of Service</span>
+          <span className="text-slate-400 text-xs">Support</span>
         </div>
       </footer>
     </div>
