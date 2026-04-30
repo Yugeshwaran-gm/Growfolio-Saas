@@ -4,7 +4,6 @@ import requests
 from django.db import IntegrityError
 from django.utils.dateparse import parse_datetime
 
-from analytics.models import ArticleView
 from articles.models import Article
 from integrations.models import ConnectedSource
 from .normalizer import normalize_devto_article
@@ -126,18 +125,6 @@ def ingest_articles_for_user(user):
                 )
                 created_count += 1
                 existing_external_ids.add(article_data["external_id"])
-
-                try:
-                    ArticleView.objects.create(
-                        article=created_article,
-                        viewer_ip="0.0.0.0",
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "Failed to create ArticleView for article %s: %s",
-                        created_article.id,
-                        exc,
-                    )
             except IntegrityError:
                 # Skip records that violate uniqueness constraints.
                 continue

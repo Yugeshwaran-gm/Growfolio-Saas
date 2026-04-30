@@ -5,6 +5,7 @@ from django.db import models
 class Skill(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
+    logo_url = models.URLField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -26,6 +27,8 @@ class UserSkill(models.Model):
     )
 
     source = models.CharField(max_length=50)
+    is_visible = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

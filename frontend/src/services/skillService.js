@@ -11,15 +11,17 @@ export const skillService = {
   },
 
   listSkills: async () => {
-    // Backend API for listing skills does not exist yet.
-    // Returning mock data keeps the UI functional until the API is implemented.
-    return [
-      { id: 1, name: 'React', proficiency: 90 },
-      { id: 2, name: 'Python', proficiency: 85 },
-      { id: 3, name: 'Django', proficiency: 85 },
-      { id: 4, name: 'JavaScript', proficiency: 90 },
-      { id: 5, name: 'SQL', proficiency: 80 },
-      { id: 6, name: 'Tailwind CSS', proficiency: 95 },
-    ]
+    const response = await apiClient.get('/skills/')
+    // response is an array of { id, name }
+    return response.data || []
+  },
+
+  updateSkill: async (id, payload) => {
+    const response = await apiClient.patch(`/skills/${id}/`, payload)
+    return response.data
+  },
+
+  deleteSkill: async (id) => {
+    await apiClient.delete(`/skills/${id}/`)
   },
 }

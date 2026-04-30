@@ -11,16 +11,18 @@ function NotificationItem({ notification, onMarkRead }) {
   const iconMap = {
     integration: '🔗',
     system: 'ℹ️',
+    profile_view: '👀',
     recruiter: '🔍',
-    milestone: '📊',
+    subscription: '📬',
     default: '🔔',
   }
 
   const badgeMap = {
     integration: 'bg-red-50',
     system: 'bg-plum-light',
+    profile_view: 'bg-amber-50',
     recruiter: 'bg-plum-light',
-    milestone: 'bg-plum-light',
+    subscription: 'bg-emerald-50',
   }
 
   const titleColor = isUnread ? 'text-primary' : 'text-slate-700'

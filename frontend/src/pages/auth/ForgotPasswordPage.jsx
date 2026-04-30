@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
         </Link>
         
         <div className="hidden md:flex items-center gap-8">
-          <nav className="flex items-center gap-8">
+          {/* <nav className="flex items-center gap-8">
             <span className="text-slate-600 text-sm font-semibold">
               Features
             </span>
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
             <span className="text-slate-600 text-sm font-semibold">
               About
             </span>
-          </nav>
+          </nav> */}
           <Link to="/login">
             <button className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-primary-500/20">
               Sign In

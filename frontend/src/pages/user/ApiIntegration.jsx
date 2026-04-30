@@ -7,12 +7,6 @@ import { Loading } from '../../components/ui/Loading'
 import { Alert, ErrorState, EmptyState } from '../../components/ui/States'
 import { integrationService } from '../../services/integrationService'
 
-const navLinks = [
-  { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Portfolio', path: '/dashboard/projects' },
-  { label: 'Analytics', path: '/dashboard/analytics' },
-  { label: 'Settings', path: '/dashboard/settings' },
-]
 
 const INTEGRATION_DEFINITIONS = [
   { source: 'github', label: 'GitHub' },
@@ -64,7 +58,7 @@ function IntegrationCard({ definition, integration, onOpenSetup, onSync, onDisco
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{definition.label}</h2>
-          <p className="mt-1 text-sm text-slate-500">Integration status and sync details</p>
+          {/* <p className="mt-1 text-sm text-slate-500">Integration status and sync details</p> */}
         </div>
         <span
           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${getStatusStyles(isConnected)}`}
@@ -93,15 +87,15 @@ function IntegrationCard({ definition, integration, onOpenSetup, onSync, onDisco
           </dd>
         </div>
 
-        <div className="flex items-start justify-between gap-4">
+        {/* <div className="flex items-start justify-between gap-4">
           <dt className="text-slate-500">Source</dt>
           <dd className="text-right font-medium text-slate-800">{definition.source}</dd>
-        </div>
+        </div> */}
 
-        <div className="flex items-start justify-between gap-4">
+        {/* <div className="flex items-start justify-between gap-4">
           <dt className="text-slate-500">Sync status</dt>
           <dd className="text-right font-medium text-slate-800">{isConnected ? capitalizeStatus(integration?.sync_status) : 'Not connected'}</dd>
-        </div>
+        </div> */}
       </dl>
 
       {integration?.error_message ? (
@@ -274,7 +268,7 @@ export default function ApiIntegration() {
   return (
     <DashboardLayout>
       <section className="mb-8">
-        <div className="mb-4 flex flex-wrap items-center gap-6">
+        {/* <div className="mb-4 flex flex-wrap items-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.path}
@@ -284,7 +278,7 @@ export default function ApiIntegration() {
               {link.label}
             </Link>
           ))}
-        </div>
+        </div> */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Integrations</h1>

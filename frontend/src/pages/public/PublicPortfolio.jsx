@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom'
 import { Loading } from '../../components/ui/Loading'
 import { EmptyState, ErrorState } from '../../components/ui/States'
 import { publicPortfolioService } from '../../services/publicPortfolioService'
+import { getSkillLogoUrl } from '../../utils/skillLogos'
+import SkillLogo from '../../components/ui/SkillLogo'
 
 const navLinks = [
   { label: 'Projects', href: '#projects' },
@@ -12,35 +14,7 @@ const navLinks = [
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-const articles = [
-  {
-    title: 'Optimizing API Latency at Scale',
-    summary: 'Strategies for caching and database indexing that reduced our p99 latency by 40%.',
-    date: 'Oct 12, 2023',
-    readTime: '5 min read',
-    source: 'Dev.to',
-  },
-  {
-    title: 'React Server Components: A Deep Dive',
-    summary: 'Understanding the shift in mental model and how to migrate large scale applications.',
-    date: 'Sep 28, 2023',
-    readTime: '8 min read',
-    source: 'Medium',
-  },
-]
-
-const papers = [
-  {
-    title: 'Machine Learning in High-Frequency FinTech Trading',
-    venue: 'Published in IEEE Transactions on Neural Networks',
-    year: '2022',
-  },
-  {
-    title: 'Distributed Ledger Scalability Analysis',
-    venue: 'Presented at Crypto 2021 Conference',
-    year: '2021',
-  },
-]
+// Articles and papers are sourced from the backend via the portfolio API.
 
 const contributionPalette = ['bg-gray-100', 'bg-plum-200', 'bg-plum-400', 'bg-plum-600', 'bg-amber-400']
 
@@ -287,6 +261,22 @@ function HeroSection({ profile, username }) {
             ))}
           </div>
         )}
+
+        {Array.isArray(profile?.skills) && profile.skills.length > 0 && (
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {profile.skills.map((us) => {
+              const name = us?.skill?.name || us?.name || ''
+              const logoUrl = us?.skill?.logo_url || getSkillLogoUrl(name)
+              if (!name) return null
+              return (
+                <span key={`${name}-${us?.id || 'skill'}`} className="flex items-center gap-2 rounded-md border border-plum-100 bg-plum-50 px-3 py-1 text-sm font-medium text-plum-700">
+                  <SkillLogo src={logoUrl} name={name} className="size-4" />
+                  <span>{name}</span>
+                </span>
+              )
+            })}
+          </div>
+        )}
       </div>
     </section>
   )
@@ -402,7 +392,7 @@ function ProjectsSection({ projects }) {
   )
 }
 
-function ArticlesAndPapersSection() {
+function ArticlesAndPapersSection({ articles = [], papers = [], profile = {} }) {
   return (
     <section id="articles" className="flex w-full justify-center border-t border-plum-100 bg-white py-16">
       <div className="flex w-full max-w-[960px] flex-col gap-12 px-6 md:flex-row">
@@ -415,52 +405,70 @@ function ArticlesAndPapersSection() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {articles.map((article) => (
-              <article key={article.title} className="rounded-xl border border-transparent p-4 transition-colors hover:border-plum-100 hover:bg-plum-50">
-                <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-bold text-plum-900">{article.title}</h3>
-                  <Icon name="openInNew" className="size-5 text-plum-200" />
-                </div>
+            {articles.length === 0 ? (
+              <div className="rounded-2xl border border-plum-100 bg-background-subtle p-8">
+                <EmptyState message="No articles available for this portfolio." />
+              </div>
+            ) : (
+              articles.map((article) => (
+                <article key={article.id} className="rounded-xl border border-transparent p-4 transition-colors hover:border-plum-100 hover:bg-plum-50">
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-lg font-bold text-plum-900">{article.title}</h3>
+                    <a href={article.url} target="_blank" rel="noreferrer"><Icon name="openInNew" className="size-5 text-plum-200" /></a>
+                  </div>
 
-                <p className="mb-3 mt-1 text-sm text-text-secondary">{article.summary}</p>
+                  {article.description && <p className="mb-3 mt-1 text-sm text-text-secondary">{article.description}</p>}
 
-                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-text-secondary">
-                  <span className="flex items-center gap-1">
-                    <Icon name="calendar" className="size-[14px]" />
-                    {article.date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Icon name="schedule" className="size-[14px]" />
-                    {article.readTime}
-                  </span>
-                  <span className="rounded border border-amber-100 bg-amber-50 px-2 py-0.5 text-amber-700">{article.source}</span>
-                </div>
-              </article>
-            ))}
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-text-secondary">
+                    <span className="flex items-center gap-1">
+                      <Icon name="calendar" className="size-[14px]" />
+                      {new Date(article.published_at).toLocaleDateString()}
+                    </span>
+                    <span className="rounded border border-amber-100 bg-amber-50 px-2 py-0.5 text-amber-700">{article.source}</span>
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </div>
 
         <div className="flex-1" id="contact">
           <div className="mb-6 flex items-center gap-3">
             <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
-              <Icon name="school" className="size-5" />
+              <Icon name="mail" className="size-5" />
             </div>
-            <h2 className="text-2xl font-bold text-plum-900">Research & Papers</h2>
+            <h2 className="text-2xl font-bold text-plum-900">Contact</h2>
           </div>
 
           <div className="flex flex-col gap-4">
-            {papers.map((paper) => (
-              <article key={paper.title} className="rounded-xl border border-plum-100 bg-background-subtle p-5 transition-shadow hover:shadow-md">
-                <div className="flex items-start gap-3">
-                  <Icon name="pdf" className="mt-1 size-5 text-plum-400" />
-                  <div>
-                    <h3 className="text-base font-bold leading-snug text-plum-900">{paper.title}</h3>
-                    <p className="mb-2 mt-1 text-sm text-text-secondary">{paper.venue}</p>
-                    <span className="text-xs text-text-secondary">{paper.year}</span>
+            {(!profile || !profile.contact || (!profile.contact.email && !profile.contact.github && !profile.contact.linkedin)) ? (
+              <div className="rounded-2xl border border-plum-100 bg-background-subtle p-8">
+                <EmptyState message="No contact information available." />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-plum-100 bg-white p-5">
+                {profile.contact.email && (
+                  <div className="mb-3">
+                    <h3 className="text-sm font-semibold text-plum-900">Email</h3>
+                    <a href={`mailto:${profile.contact.email}`} className="text-sm text-slate-600">{profile.contact.email}</a>
                   </div>
-                </div>
-              </article>
-            ))}
+                )}
+
+                {profile.contact.github && (
+                  <div className="mb-3">
+                    <h3 className="text-sm font-semibold text-plum-900">GitHub</h3>
+                    <a href={profile.contact.github} target="_blank" rel="noreferrer" className="text-sm text-slate-600">{profile.contact.github}</a>
+                  </div>
+                )}
+
+                {profile.contact.linkedin && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-plum-900">LinkedIn</h3>
+                    <a href={profile.contact.linkedin} target="_blank" rel="noreferrer" className="text-sm text-slate-600">{profile.contact.linkedin}</a>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -536,7 +544,7 @@ function PublicPortfolio() {
             <HeroSection profile={portfolio} username={username} />
             <ContributionSection />
             <ProjectsSection projects={projects} />
-            <ArticlesAndPapersSection />
+            <ArticlesAndPapersSection articles={portfolio?.articles || []} papers={portfolio?.papers || []} profile={portfolio} />
           </>
         )}
       </main>

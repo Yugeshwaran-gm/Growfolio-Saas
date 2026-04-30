@@ -1,7 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from analytics.models import ArticleView
 from .models import Article
 from .serializers import ArticleSerializer
 
@@ -54,11 +53,6 @@ class ArticleDetailView(APIView):
                 "success": False,
                 "error": "Article not found"
             }, status=404)
-
-        ArticleView.objects.create(
-            article=article,
-            viewer_ip=request.META["REMOTE_ADDR"]
-        )
 
         serializer = ArticleSerializer(article)
 

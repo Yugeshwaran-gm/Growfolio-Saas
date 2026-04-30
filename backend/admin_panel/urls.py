@@ -10,3 +10,9 @@ urlpatterns = [
     path("users/", AdminUserListView.as_view()),
     path("users/<int:pk>/toggle/", ToggleUserStatusView.as_view()),
 ]
+
+from .views import AdminUserDetailView
+
+urlpatterns += [
+    path("users/<int:pk>/", AdminUserDetailView.as_view()),
+]

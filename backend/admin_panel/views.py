@@ -80,3 +80,25 @@ class ToggleUserStatusView(APIView):
             "message": "User status updated",
             "is_active": user.is_active
         })
+
+
+class AdminUserDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+
+        if not request.user.is_staff:
+            return Response({"error": "Admin only"}, status=403)
+
+        user = get_object_or_404(User, id=pk)
+
+        return Response({
+            "id": user.id,
+            "email": user.email,
+            "is_active": user.is_active,
+            "is_recruiter": user.is_recruiter,
+            "is_creator": user.is_creator,
+            "last_login": user.last_login,
+            "date_joined": user.date_joined,
+        })

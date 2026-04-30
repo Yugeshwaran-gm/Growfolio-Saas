@@ -6,6 +6,8 @@ from rest_framework import status
 from accounts.models import User
 from profiles.models import Profile
 from analytics.models import ProfileView
+from analytics.utils import get_client_ip
+from notifications.services import create_notification
 from .serializers import PublicProfileSerializer
 
 
@@ -29,7 +31,7 @@ class PublicPortfolioView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        ip = request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR")
+        ip = get_client_ip(request)
 
         viewer = request.user if request.user.is_authenticated else None
 
@@ -59,6 +61,18 @@ class PublicPortfolioView(APIView):
                     user=user,
                     viewer=viewer,
                     viewer_ip=ip
+                )
+
+                create_notification(
+                    user=user,
+                    title="New profile view",
+                    message="Your portfolio was viewed.",
+                    notification_type="profile_view",
+                    metadata={
+                        "viewer_id": viewer.id if viewer else None,
+                        "viewer_ip": ip,
+                        "profile_username": user.username,
+                    },
                 )
 
         serializer = PublicProfileSerializer(profile)

@@ -27,7 +27,10 @@ class ExploreProfilesView(ListAPIView):
             )
 
         # FILTER BY ROLE
-        role = self.request.query_params.get("role")
+        role_raw = (self.request.query_params.get("role") or "").strip().lower()
+
+        # Accept both singular and plural role terms from the frontend
+        role = role_raw.rstrip('s')
 
         if role == "creator":
             queryset = queryset.filter(user__is_creator=True)
