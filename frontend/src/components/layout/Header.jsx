@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import MaterialIcon from '../ui/MaterialIcon'
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -34,11 +35,10 @@ export function Header() {
 
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden p-2"
+          className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          aria-label="Toggle menu"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <MaterialIcon name="menu" size={22} />
         </button>
 
         {isMenuOpen && (

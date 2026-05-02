@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { DashboardLayout } from '../../layouts/DashboardLayout'
 import { Card, CardHeader, CardBody, CardFooter } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
 import { EmptyState } from '../../components/ui/States'
 import { Alert } from '../../components/ui/States'
 import { projectService } from '../../services/projectService'
@@ -30,6 +31,7 @@ export default function ProjectsPage() {
   const [syncing, setSyncing] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+  const [savingId, setSavingId] = useState(null)
 
   const loadGithubIntegration = async () => {
     const integrations = await integrationService.getIntegrations()
@@ -77,6 +79,45 @@ export default function ProjectsPage() {
   const reloadProjects = async () => {
     const data = await projectService.listProjects()
     setProjects(data)
+  }
+
+  const updateProjectField = (projectId, field, value) => {
+    setProjects((currentProjects) =>
+      currentProjects.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              [field]: value,
+            }
+          : project
+      )
+    )
+  }
+
+  const handleSaveProject = async (project) => {
+    setSavingId(project.id)
+    setError('')
+
+    try {
+      await projectService.updateProject(project.id, {
+        title: project.title,
+        description: project.description,
+        project_url: project.project_url,
+        tech_stack: normalizeTags(project.tech_stack),
+        is_visible: Boolean(project.is_visible),
+        sort_order: Number(project.sort_order) || 0,
+      })
+
+      await reloadProjects()
+      setImportFeedback({
+        type: 'success',
+        message: 'Project updated successfully.',
+      })
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update project.')
+    } finally {
+      setSavingId(null)
+    }
   }
 
   const handleSyncGitHub = async () => {
@@ -161,7 +202,7 @@ export default function ProjectsPage() {
 
     try {
       await projectService.deleteProject(projectId)
-      setProjects((currentProjects) => currentProjects.filter((project) => project.id !== projectId))
+      await reloadProjects()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to delete project.')
     } finally {
@@ -231,16 +272,43 @@ export default function ProjectsPage() {
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">{project.title}</h3>
                     <p className="text-sm text-slate-600">{project.description}</p>
+                    <p className="mt-1 text-xs text-slate-500">Order {project.sort_order ?? 0} | {project.is_visible ? 'Visible in portfolio' : 'Hidden from portfolio'}</p>
                   </div>
                 </div>
               </CardHeader>
               <CardBody>
-                <div className="flex flex-wrap gap-2">
-                  {normalizeTags(project.tech_stack).map((tag) => (
-                    <span key={tag} className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      type="number"
+                      label="Order"
+                      value={project.sort_order ?? 0}
+                      onChange={(event) => updateProjectField(project.id, 'sort_order', event.target.value)}
+                      min={0}
+                      disabled={!project.is_visible}
+                      helperText={project.is_visible ? 'Lower numbers appear first on your portfolio.' : 'Enable visibility to change ordering.'}
+                    />
+
+                    <div className="flex items-end">
+                      <label className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(project.is_visible)}
+                          onChange={(event) => updateProjectField(project.id, 'is_visible', event.target.checked)}
+                          className="size-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
+                        />
+                        Show in portfolio
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {normalizeTags(project.tech_stack).map((tag) => (
+                      <span key={tag} className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </CardBody>
               <CardFooter>
@@ -259,6 +327,14 @@ export default function ProjectsPage() {
                   disabled={deletingId === project.id}
                 >
                   {deletingId === project.id ? 'Deleting...' : 'Delete'}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleSaveProject(project)}
+                  disabled={savingId === project.id}
+                >
+                  {savingId === project.id ? 'Saving...' : 'Save'}
                 </Button>
               </CardFooter>
             </Card>

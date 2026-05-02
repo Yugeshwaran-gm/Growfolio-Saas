@@ -79,6 +79,7 @@ export default function RegisterPage() {
     username: '',
     email: '',
     password: '',
+    is_admin: false,
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -107,10 +108,11 @@ export default function RegisterPage() {
     try {
       const username = formData.username.trim() || formData.email.split('@')[0]
 
-      await authService.register({
+      const response = await authService.register({
         email: formData.email,
         username,
         password: formData.password,
+        is_admin: formData.is_admin,
       })
 
       setSuccess('Account created successfully. Redirecting to login...')
@@ -223,6 +225,20 @@ export default function RegisterPage() {
                   <InfoIcon />
                   Must be at least 8 characters long.
                 </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  id="is_admin"
+                  name="is_admin"
+                  type="checkbox"
+                  checked={formData.is_admin}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, is_admin: e.target.checked }))}
+                  className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
+                />
+                <label htmlFor="is_admin" className="text-sm font-medium text-slate-700">
+                  Register as Admin
+                </label>
               </div>
             </div>
 

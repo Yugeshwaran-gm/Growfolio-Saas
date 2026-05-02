@@ -4,21 +4,26 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import UpdateAPIView
+from django.db.models import Max
 from .models import Project
 from .serializers import ProjectSerializer
 from analytics.models import ProjectView
+from .order_utils import normalize_project_order
 
 
 # Create + List Projects
 class ProjectListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProjectSerializer
+    pagination_class = None
 
     def get_queryset(self):
-        return Project.objects.filter(user=self.request.user)
+        normalize_project_order(self.request.user)
+        return Project.objects.filter(user=self.request.user).order_by("sort_order", "created_at", "id")
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        max_order = Project.objects.filter(user=self.request.user).aggregate(max_order=Max("sort_order")).get("max_order") or 0
+        serializer.save(user=self.request.user, sort_order=max_order + 1)
 
 
 # Retrieve, Update, Delete Project

@@ -37,7 +37,7 @@ class PublicProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_projects(self, obj):
-        projects = Project.objects.filter(user=obj.user, is_visible=True)
+        projects = Project.objects.filter(user=obj.user, is_visible=True).order_by('sort_order', 'created_at', 'id')
         return PublicProjectSerializer(projects, many=True).data
 
     def get_articles(self, obj):

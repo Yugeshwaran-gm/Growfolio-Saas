@@ -1,6 +1,8 @@
 import requests
 import logging
+from django.db.models import Max
 from projects.models import Project
+from projects.order_utils import normalize_project_order
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +57,7 @@ def fetch_github_repos(user, username):
 
     created = 0
     updated = 0
+    next_sort_order = Project.objects.filter(user=user).aggregate(max_order=Max("sort_order")).get("max_order") or 0
 
     for repo in repos:
 
@@ -69,14 +72,19 @@ def fetch_github_repos(user, username):
             defaults={
                 "title": title,
                 "description": description,
-                "tech_stack": [language] if language else []
+                "tech_stack": [language] if language else [],
             }
         )
 
         if is_created:
+            next_sort_order += 1
+            project.sort_order = next_sort_order
+            project.save(update_fields=["sort_order"])
             created += 1
         else:
             updated += 1
+
+    normalize_project_order(user)
 
     return {
         "fetched": len(repos),

@@ -5,10 +5,11 @@ import { DashboardLayout } from '../../layouts/DashboardLayout'
 import { Loading } from '../../components/ui/Loading'
 import { ErrorState } from '../../components/ui/States'
 import Button from '../../components/ui/Button'
+import MaterialIcon from '../../components/ui/MaterialIcon'
 import { analyticsService } from '../../services/analyticsService'
 import { integrationService } from '../../services/integrationService'
 
-// Stat Card Component
+// Stat Card Component 
 function StatCard({ icon, label, value, badge, badgeColor, isPreview = false, previewNote = '' }) {
   return (
     <div className={`bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-shadow ${isPreview ? 'opacity-80' : 'hover:shadow-md'}`}>
@@ -84,21 +85,21 @@ export default function DashboardPage() {
 
   const statCards = [
     {
-      icon: '👁️',
+      iconName: 'visibility',
       label: 'Profile Views',
       value: analytics.profile_views.toLocaleString(),
       badge: 'Live',
-      badgeColor: 'text-primary-500 text-xs font-bold bg-primary-500/10 px-2 py-1 rounded-full',
+      badgeColor: 'text-emerald-500 text-xs font-bold bg-emerald-50 px-2 py-1 rounded-full',
     },
     {
-      icon: '📊',
+      iconName: 'bar_chart',
       label: 'Project Views',
       value: analytics.project_views.toLocaleString(),
       badge: 'Live',
       badgeColor: 'text-emerald-500 text-xs font-bold bg-emerald-50 px-2 py-1 rounded-full',
     },
     {
-      icon: '💻',
+      iconName: 'dashboard',
       label: 'Dashboard Status',
       value: 'Live',
       badge: 'Preview',
@@ -107,7 +108,7 @@ export default function DashboardPage() {
       previewNote: 'Static preview',
     },
     {
-      icon: '⚙️',
+      iconName: 'work_outline',
       label: 'Portfolio Overview',
       value: 'Synced',
       badge: 'Preview',
@@ -158,7 +159,7 @@ export default function DashboardPage() {
           <div className="flex-1 max-w-md">
             <div className="relative group">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-500/60 group-focus-within:text-primary-500 transition-colors">
-                🔍
+                <MaterialIcon name="search" size={18} className="text-primary-500/80" ariaLabel="Search" />
               </span>
               <input
                 type="text"
@@ -177,7 +178,7 @@ export default function DashboardPage() {
               aria-label="Open notifications"
               className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              🔔
+              <MaterialIcon name="notifications" size={20} className="text-slate-600" ariaLabel="Notifications" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-accent-500 rounded-full border-2 border-white" />
             </button>
 
@@ -196,7 +197,7 @@ export default function DashboardPage() {
               <div className="w-10 h-10 rounded-full border-2 border-primary-500/10 bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold">
                 {displayName.charAt(0)}
               </div>
-              <span>▼</span>
+              <MaterialIcon name="expand_more" size={18} className="text-slate-500" ariaLabel="Open profile menu" />
             </button>
           </div>
         </header>
@@ -225,7 +226,7 @@ export default function DashboardPage() {
               {statCards.map((stat, index) => (
                 <StatCard
                   key={index}
-                  icon={stat.icon}
+                  icon={<MaterialIcon name={stat.iconName} size={20} className="text-primary-500" />}
                   label={stat.label}
                   value={stat.value}
                   badge={stat.badge}

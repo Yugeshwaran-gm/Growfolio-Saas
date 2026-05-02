@@ -142,11 +142,15 @@ export default function HomePage() {
                   <span>{Number(profile.portfolio_views || 0).toLocaleString()} views</span>
                 </div>
 
-                <Link to={profile.portfolio_url || `/portfolio/${profile.username}`}>
-                  <Button variant="secondary" size="sm" className="w-full">
-                    View Portfolio
-                  </Button>
-                </Link>
+                <Link
+                    to={profile.portfolio_url || `/portfolio/${profile.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="secondary" size="sm" className="w-full">
+                      View Portfolio
+                    </Button>
+                  </Link>
               </article>
             ))}
           </div>

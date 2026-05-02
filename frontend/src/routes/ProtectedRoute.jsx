@@ -21,14 +21,16 @@ export function ProtectedRoute({ children, requiredRole = null }) {
 }
 
 export function PublicRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, user } = useAuth()
 
   if (loading) {
     return <Loading message="Loading..." />
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+    // Redirect admins to admin dashboard, regular users to user dashboard
+    const redirectPath = (user?.is_staff || user?.is_superuser) ? '/admin' : '/dashboard'
+    return <Navigate to={redirectPath} replace />
   }
 
   return children
@@ -41,7 +43,7 @@ export function AdminRoute({ children }) {
     return <Loading message="Loading..." />
   }
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || (!user?.is_staff && !user?.is_superuser)) {
     return <Navigate to="/dashboard" replace />
   }
 

@@ -12,7 +12,11 @@ class Project(models.Model):
     project_url = models.URLField(blank=True)
     tech_stack = models.JSONField(blank=True, null=True)
     is_visible = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "created_at"]
 
     def __str__(self):
         return self.title

@@ -103,11 +103,17 @@ export default function LoginPage() {
       try {
         const profile = await profileService.getProfile()
         login({ email, ...profile }, response.access, response.refresh)
+        
+        // Redirect to admin dashboard if user is admin, otherwise to user dashboard
+        if (profile?.is_staff || profile?.is_superuser) {
+          navigate('/admin')
+        } else {
+          navigate('/dashboard')
+        }
       } catch (profileError) {
         console.warn('Logged in without profile hydration:', profileError)
+        navigate('/dashboard')
       }
-
-      navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.')
     } finally {
