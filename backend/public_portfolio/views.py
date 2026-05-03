@@ -9,6 +9,12 @@ from analytics.models import ProfileView
 from analytics.utils import get_client_ip
 from notifications.services import create_notification
 from .serializers import PublicProfileSerializer
+from rest_framework.decorators import api_view
+from django.utils import timezone
+from datetime import timedelta
+from analytics.models import ProfileView
+from articles.models import Article
+from projects.models import Project
 
 
 class PublicPortfolioView(APIView):
@@ -75,5 +81,50 @@ class PublicPortfolioView(APIView):
                     },
                 )
 
-        serializer = PublicProfileSerializer(profile)
+        serializer = PublicProfileSerializer(profile, context={'request': request})
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+def contributions_view(request, username):
+    """Return daily contribution counts for the past 364 days.
+
+    This aggregates profile views, article publishes, and project creations as a simple example.
+    """
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    end = timezone.now().date()
+    days = 364
+    start = end - timedelta(days=days - 1)
+
+    # initialize zeroed list
+    counts = [0] * days
+
+    # Profile views
+    pviews = ProfileView.objects.filter(user=user, viewed_at__date__gte=start).values_list('viewed_at', flat=True)
+    for dt in pviews:
+        idx = (end - dt.date()).days
+        if 0 <= idx < days:
+            counts[days - 1 - idx] += 1
+
+    # Articles published
+    articles = Article.objects.filter(user=user, published_at__date__gte=start).values_list('published_at', flat=True)
+    for dt in articles:
+        idx = (end - dt.date()).days
+        if 0 <= idx < days:
+            counts[days - 1 - idx] += 1
+
+    # Projects created
+    projects = Project.objects.filter(user=user, created_at__date__gte=start).values_list('created_at', flat=True)
+    for dt in projects:
+        idx = (end - dt.date()).days
+        if 0 <= idx < days:
+            counts[days - 1 - idx] += 1
+
+    return Response({
+        'start_date': start.isoformat(),
+        'days': counts,
+    })

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import MaterialIcon from '../ui/MaterialIcon'
@@ -6,9 +6,33 @@ import MaterialIcon from '../ui/MaterialIcon'
 export function Header() {
   const { user, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const lastY = useRef(0)
+
+  useEffect(() => {
+    let rafId = null
+    function onScroll() {
+      if (rafId) return
+      rafId = requestAnimationFrame(() => {
+        const y = window.scrollY || window.pageYOffset
+        if (y > lastY.current && y > 100) {
+          setHidden(true)
+        } else {
+          setHidden(false)
+        }
+        lastY.current = y
+        rafId = null
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [])
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
+    <header className={`bg-white shadow-sm sticky top-0 z-40 transform transition-transform duration-200 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}>
       <nav className="container-custom h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="text-2xl font-bold text-primary-500">

@@ -14,6 +14,7 @@ class Project(models.Model):
     is_visible = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField(upload_to='projects/', blank=True, null=True)
 
     class Meta:
         ordering = ["sort_order", "created_at"]

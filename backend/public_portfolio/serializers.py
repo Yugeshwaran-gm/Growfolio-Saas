@@ -11,10 +11,11 @@ from skills.models import UserSkill
 class PublicProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = ['title', 'description', 'project_url', 'tech_stack']
+        fields = ['title', 'description', 'project_url', 'tech_stack', 'image']
 
 
 class PublicProfileSerializer(serializers.ModelSerializer):
+    contact = serializers.SerializerMethodField()
     projects = serializers.SerializerMethodField()
     articles = serializers.SerializerMethodField()
     skills = serializers.SerializerMethodField()
@@ -25,13 +26,20 @@ class PublicProfileSerializer(serializers.ModelSerializer):
         fields = [
             'full_name',
             'bio',
+            'professional_summary',
+            'career_objective',
             'profile_image',
+            'resume',
             'github',
             'linkedin',
             'portfolio_views', 
             'projects',
             'articles',
             'skills',
+            'contact',
+            'education',
+            'certificates',
+            'extras',
             # 'contact',
             
         ]

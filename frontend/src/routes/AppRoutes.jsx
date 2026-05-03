@@ -18,7 +18,6 @@ import ProjectsPage from '../pages/user/ProjectsPage'
 import SkillsPage from '../pages/user/SkillsPage'
 import ArticlesPage from '../pages/user/ArticlesPage'
 import ArticleDetailPage from '../pages/user/ArticleDetailPage'
-import ProfilePage from '../pages/user/ProfilePage'
 import ProfileManagementPage from '../pages/user/ProfileManagementPage'
 import AnalyticsDashboard from '../pages/user/AnalyticsDashboard'
 import AccountSettingsPage from '../pages/user/AccountSettingsPage'
@@ -126,14 +125,6 @@ export function AppRoutes() {
       />
       <Route
         path="/dashboard/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/profile-management"
         element={
           <ProtectedRoute>
             <ProfileManagementPage />

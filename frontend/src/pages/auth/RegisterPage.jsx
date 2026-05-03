@@ -150,16 +150,16 @@ export default function RegisterPage() {
             <h1 className="mb-3 text-2xl font-extrabold text-primary-500 sm:text-3xl">
               Claim your professional space
             </h1>
-            <p className="text-base text-slate-500">
+            {/* <p className="text-base text-slate-500">
               Select your primary craft to get started with GrowFolio.
-            </p>
+            </p> */}
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-6 px-6 pb-8 sm:px-8 sm:pb-10">
             {error && <Alert type="error" message={error} />}
             {success && <Alert type="success" message={success} />}
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* <div className="grid grid-cols-2 gap-3">
               {roleOptions.map((role) => (
                 <RoleOption
                   key={role.value}
@@ -170,7 +170,7 @@ export default function RegisterPage() {
                   onSelect={(value) => setFormData((prev) => ({ ...prev, role: value }))}
                 />
               ))}
-            </div>
+            </div> */}
 
             <div className="space-y-4 pt-1">
               <div className="space-y-1.5">
@@ -227,7 +227,7 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 pt-2">
+              {/* <div className="flex items-center gap-3 pt-2">
                 <input
                   id="is_admin"
                   name="is_admin"
@@ -239,7 +239,7 @@ export default function RegisterPage() {
                 <label htmlFor="is_admin" className="text-sm font-medium text-slate-700">
                   Register as Admin
                 </label>
-              </div>
+              </div> */}
             </div>
 
             <button

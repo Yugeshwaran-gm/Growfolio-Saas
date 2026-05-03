@@ -8,9 +8,15 @@ function buildProfilePayload(data) {
   const payload = new FormData()
 
   Object.entries(data || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      payload.append(key, value)
+    if (value === undefined || value === null || value === '') return
+
+    // Serialize arrays or objects so backend JSONFields can parse them when using FormData
+    if (Array.isArray(value) || (typeof value === 'object' && !(value instanceof File))) {
+      payload.append(key, JSON.stringify(value))
+      return
     }
+
+    payload.append(key, value)
   })
 
   return payload
