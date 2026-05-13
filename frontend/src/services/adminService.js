@@ -12,11 +12,27 @@ export const adminService = {
 
   listUsers: async () => {
     const response = await apiClient.get('/admin/users/')
-    return normalizeResponse(response.data)
+    const payload = normalizeResponse(response.data)
+    return Array.isArray(payload) ? payload : []
   },
 
   toggleUserStatus: async (userId) => {
     const response = await apiClient.patch(`/admin/users/${userId}/toggle/`)
+    return normalizeResponse(response.data)
+  },
+
+  getContentOverview: async () => {
+    const response = await apiClient.get('/admin/content/')
+    return normalizeResponse(response.data)
+  },
+
+  getAnalyticsOverview: async () => {
+    const response = await apiClient.get('/admin/analytics/')
+    return normalizeResponse(response.data)
+  },
+
+  getSettingsOverview: async () => {
+    const response = await apiClient.get('/admin/settings/')
     return normalizeResponse(response.data)
   },
 }

@@ -42,18 +42,15 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-4">
           {user && (
-            <>
-              <span className="text-slate-700">{user.email}</span>
-              <button
-                onClick={() => {
-                  logout()
-                  window.location.href = '/login'
-                }}
-                className="px-4 py-2 text-accent-500 hover:text-accent-600 font-medium"
-              >
-                Logout
-              </button>
-            </>
+            <button
+              onClick={() => {
+                logout()
+                window.location.href = '/login'
+              }}
+              className="px-4 py-2 text-accent-500 hover:text-accent-600 font-medium"
+            >
+              Logout
+            </button>
           )}
         </div>
 

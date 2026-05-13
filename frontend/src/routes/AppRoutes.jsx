@@ -26,7 +26,6 @@ import ApiIntegration from '../pages/user/ApiIntegration'
 
 // Admin Pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
-import UsersPage from '../pages/admin/UsersPage'
 import UserManagementPage from '../pages/admin/UserManagementPage'
 import AdminReportsLogsPage from '../pages/admin/AdminReportsLogsPage'
 import AdminContentPage from '../pages/admin/AdminContentPage'
@@ -185,18 +184,9 @@ export function AppRoutes() {
         path="/admin/users"
         element={
           <AdminRoute>
-            <UsersPage />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/user-management"
-        element={
-          <AdminRoute>
             <UserManagementPage />
           </AdminRoute>
         }
-
       />
       <Route
         path="/admin/reports-logs"

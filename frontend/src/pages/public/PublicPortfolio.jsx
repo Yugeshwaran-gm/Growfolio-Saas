@@ -340,6 +340,11 @@ function HeroSection({ profile, username }) {
   const [imgError, setImgError] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
   const displayName = profile?.full_name || username || 'Portfolio Owner'
+  const roleLabel = profile?.headline || profile?.title || 'Senior Full-Stack Engineer'
+  const heroCopy =
+    profile?.professional_summary ||
+    profile?.bio ||
+    'Specializing in high-performance distributed systems and modern React ecosystems. I build scalable architectures that bridge the gap between complex technical requirements and seamless user experiences.'
 
   const socialLinks = [
     { label: 'GitHub', href: profile?.github, icon: 'code' },
@@ -367,122 +372,110 @@ function HeroSection({ profile, username }) {
 
   return (
     <section
-      className="relative flex w-full flex-col items-center overflow-hidden px-6 py-16 text-center lg:py-28"
-      style={{ background: 'linear-gradient(135deg, #3d0738 0%, #5c0a5c 50%, #701a75 100%)' }}
+      className="relative flex w-full justify-center overflow-hidden px-6 py-14 text-left lg:px-10 lg:py-20"
+      style={{ background: 'linear-gradient(135deg, #2d022a 0%, #46083f 52%, #5e1058 100%)' }}
     >
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-15">
-        <div className="absolute left-[-10%] top-[-20%] h-1/2 w-1/2 rounded-full bg-amber-400 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] h-3/5 w-2/5 rounded-full bg-plum-400 blur-[100px]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
+        <div className="absolute left-[-12%] top-[-18%] h-72 w-72 rounded-full bg-amber-400 blur-[120px]" />
+        <div className="absolute right-[-8%] top-12 h-64 w-64 rounded-full bg-fuchsia-300 blur-[140px]" />
+        <div className="absolute bottom-[-18%] left-1/3 h-80 w-80 rounded-full bg-plum-300 blur-[150px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center max-w-3xl">
-        {/* Avatar with golden border and floating contact icon */}
-        <div className="relative mb-8">
-          <div className="relative rounded-full p-2 bg-gradient-to-br from-yellow-400 to-amber-400">
+      <div className="relative z-10 flex w-full max-w-5xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-16">
+        <div className="relative shrink-0 lg:self-start">
+          <div className="absolute -inset-4 rounded-full border border-amber-300/30 opacity-70 blur-[1px]" />
+          <div className="relative rounded-full border-[3px] border-amber-400 bg-plum-900/30 p-1.5 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_14px_30px_rgba(0,0,0,0.35)]">
             {profile?.profile_image && !imgError ? (
               <>
                 {!imgLoaded && (
-                  <div className="absolute inset-2 rounded-full bg-white/10 animate-pulse" />
+                  <div className="absolute inset-1.5 rounded-full bg-white/10 animate-pulse" />
                 )}
                 <img
                   src={profile.profile_image}
-                  alt={`${displayName} profile`}
+                  alt={`${displayName} profile image`}
                   onError={() => setImgError(true)}
                   onLoad={() => setImgLoaded(true)}
                   crossOrigin="anonymous"
                   referrerPolicy="no-referrer"
-                  className={`w-44 h-44 md:w-56 md:h-56 rounded-full border-4 border-white object-cover ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  className={`h-44 w-44 rounded-full object-cover shadow-[0_12px_30px_rgba(0,0,0,0.28)] transition-opacity duration-300 md:h-56 md:w-56 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
               </>
             ) : (
-              <div className="w-44 h-44 md:w-56 md:h-56 flex items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-plum-400 to-amber-400 text-5xl md:text-6xl font-bold text-white">
+              <div className="flex h-44 w-44 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-plum-500 via-plum-700 to-amber-500 text-5xl font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.28)] md:h-56 md:w-56 md:text-6xl">
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
 
-          {/* Floating contact button */}
           <button
             aria-label="Contact"
-            onClick={() => { if (profile?.email) window.location.href = `mailto:${profile.email}` }}
-            className="absolute bottom-2 right-0 flex h-11 w-11 items-center justify-center rounded-full bg-amber-400 shadow-lg hover:scale-110 transition-transform text-plum-900"
+            onClick={() => {
+              if (profile?.email) window.location.href = `mailto:${profile.email}`
+            }}
+            className="absolute bottom-3 right-1 flex h-10 w-10 items-center justify-center rounded-full border border-amber-200/40 bg-amber-400 text-plum-900 shadow-[0_10px_20px_rgba(0,0,0,0.22)] transition-transform hover:scale-105"
           >
             <Icon name="mail" className="size-5" />
           </button>
         </div>
 
-        {/* Name */}
-        <h1 className="mb-3 text-5xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
-          {displayName}
-        </h1>
+        <div className="flex max-w-2xl flex-1 flex-col items-center text-center lg:items-start lg:text-left">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-amber-300/95">
+            {roleLabel}
+          </p>
 
-        {/* Title/Role */}
-        <p className="mb-4 text-xs md:text-sm font-bold uppercase tracking-widest text-amber-300 drop-shadow-sm">
-          Senior Full-Stack Engineer
-        </p>
+          <h1 className="max-w-2xl text-4xl font-extrabold tracking-[-0.04em] text-white drop-shadow-[0_4px_14px_rgba(0,0,0,0.24)] sm:text-5xl lg:text-6xl">
+            {displayName}
+          </h1>
 
-        {/* Professional Summary / Bio */}
-        <p className="mb-6 text-base md:text-lg font-light leading-relaxed text-white/95 px-2">
-          {profile?.professional_summary || profile?.bio || 'Aspiring Full Stack Developer with a strong foundation in the MERN stack and hands-on experience building real-world projects. Passionate about clean code, learning new technologies, and developing scalable web applications.'}
-        </p>
+          <div className="mt-5 max-w-xl text-sm leading-7 text-white/50 sm:text-[0.98rem]">
+            <p>{heroCopy}</p>
+          </div>
 
-        {/* Portfolio Views */}
-        <p className="mb-8 text-xs md:text-sm font-semibold text-white/70 drop-shadow-sm">
-          Portfolio views: {Number(profile?.portfolio_views || 0).toLocaleString()}
-        </p>
-
-        {/* Buttons */}
-        <div className="mb-12 flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => { if (profile?.email) window.location.href = `mailto:${profile.email}` }}
-            className="flex h-11 items-center justify-center gap-2 rounded-lg bg-amber-400 px-6 text-sm font-semibold text-plum-900 hover:bg-amber-300 transition-colors shadow-md"
-          >
-            <Icon name="mail" className="size-4" />
-            <span>Contact Me</span>
-          </button>
-
-          {profile?.resume && (
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <button
               type="button"
-              onClick={downloadResume}
-              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/40 bg-transparent px-6 text-sm font-semibold text-white hover:border-white/60 hover:bg-white/5 transition-all"
+              onClick={() => {
+                if (profile?.email) window.location.href = `mailto:${profile.email}`
+              }}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-400 px-5 text-sm font-semibold text-plum-950 shadow-[0_10px_22px_rgba(0,0,0,0.22)] transition-all hover:-translate-y-0.5 hover:bg-amber-300"
             >
-              <Icon name="download" className="size-4" />
-              <span>Download CV</span>
+              <Icon name="mail" className="size-4" />
+              <span>Contact Me</span>
             </button>
-          )}
 
-          {profile?.linkedin && (
-            <a
-              href={profile.linkedin}
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/40 bg-transparent px-6 text-sm font-semibold text-white hover:border-white/60 hover:bg-white/5 transition-all"
-            >
-              <Icon name="openInNew" className="size-4" />
-              <span>LinkedIn</span>
-            </a>
-          )}
-        </div>
-
-        {/* Social icons at bottom */}
-        {socialLinks.length > 0 && (
-          <div className="flex items-center justify-center gap-5">
-            {socialLinks.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target="_blank"
-                rel="noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white hover:border-white/60 hover:bg-white/20 transition-all"
-                aria-label={item.label}
+            {profile?.resume && (
+              <button
+                type="button"
+                onClick={downloadResume}
+                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/8 px-5 text-sm font-semibold text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/12"
               >
-                <Icon name={item.icon} className="size-5" />
-              </a>
-            ))}
+                <Icon name="download" className="size-4" />
+                <span>Download CV</span>
+              </button>
+            )}
           </div>
-        )}
+
+          {socialLinks.length > 0 && (
+            <div className="mt-6 flex items-center justify-center gap-3 lg:justify-start">
+              {socialLinks.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white/90 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-amber-300/30 hover:bg-white/14"
+                  aria-label={item.label}
+                >
+                  <Icon name={item.icon} className="size-5" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-6 text-xs font-medium tracking-[0.22em] text-white/45 uppercase">
+            Portfolio views {Number(profile?.portfolio_views || 0).toLocaleString()}
+          </p>
+        </div>
       </div>
     </section>
   )

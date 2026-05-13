@@ -21,6 +21,19 @@ function getDisplayName(user) {
   return email.split('@')[0]
 }
 
+function resolveRole(user) {
+  if (user?.is_superuser || user?.is_staff) {
+    return 'Admin'
+  }
+  if (user?.is_recruiter) {
+    return 'Recruiter'
+  }
+  if (user?.is_creator) {
+    return 'Creator'
+  }
+  return 'User'
+}
+
 export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState(null)
   const [users, setUsers] = useState([])
@@ -115,7 +128,7 @@ export default function AdminDashboardPage() {
                           <td className="px-6 py-4 font-medium text-slate-900">{getDisplayName(user)}</td>
                           <td className="px-6 py-4 text-slate-600">{user.email || '-'}</td>
                           <td className="px-6 py-4 text-slate-600">
-                            {user.is_recruiter ? 'Recruiter' : user.is_creator ? 'Creator' : 'User'}
+                            {resolveRole(user)}
                           </td>
                           <td className="px-6 py-4">
                             <span

@@ -7,6 +7,7 @@ export function AdminLayout({ children }) {
     { path: '/admin/users', label: 'Users' },
     { path: '/admin/content', label: 'Content' },
     { path: '/admin/analytics', label: 'Analytics' },
+    { path: '/admin/reports-logs', label: 'Reports & Logs' },
     { path: '/admin/settings', label: 'Settings' },
   ]
 

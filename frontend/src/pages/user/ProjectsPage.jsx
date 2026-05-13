@@ -32,6 +32,7 @@ export default function ProjectsPage() {
   const [connecting, setConnecting] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [savingId, setSavingId] = useState(null)
+  const [savingAll, setSavingAll] = useState(false)
 
   const loadGithubIntegration = async () => {
     const integrations = await integrationService.getIntegrations()
@@ -117,6 +118,31 @@ export default function ProjectsPage() {
       setError(err.response?.data?.detail || 'Failed to update project.')
     } finally {
       setSavingId(null)
+    }
+  }
+
+  const handleSaveAllProjects = async () => {
+    setSavingAll(true)
+    setError('')
+
+    try {
+      const savePromises = projects.map((project) =>
+        projectService.updateProject(project.id, {
+          is_visible: Boolean(project.is_visible),
+          sort_order: Number(project.sort_order) || 0,
+        })
+      )
+
+      await Promise.all(savePromises)
+      await reloadProjects()
+      setImportFeedback({
+        type: 'success',
+        message: `All ${projects.length} project${projects.length === 1 ? '' : 's'} saved successfully.`,
+      })
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save projects.')
+    } finally {
+      setSavingAll(false)
     }
   }
 
@@ -261,7 +287,17 @@ export default function ProjectsPage() {
           </CardBody>
         </Card>
       ) : projects.length > 0 ? (
-        <div className="grid md:grid-cols-2 gap-6">
+        <>
+          <div className="mb-6 flex justify-end">
+            <Button 
+              variant="primary" 
+              onClick={handleSaveAllProjects} 
+              disabled={savingAll}
+            >
+              {savingAll ? 'Saving All Changes...' : 'Save All Changes'}
+            </Button>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
           {projects.map((project) => (
             <Card key={project.id} className="flex flex-col">
               <CardHeader>
@@ -339,7 +375,8 @@ export default function ProjectsPage() {
               </CardFooter>
             </Card>
           ))}
-        </div>
+          </div>
+        </>
       ) : (
         <Card>
           <CardBody>

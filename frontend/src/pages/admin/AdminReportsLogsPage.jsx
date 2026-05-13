@@ -34,6 +34,9 @@ function StatusBadge({ active }) {
 }
 
 function resolveRole(user) {
+  if (user.is_superuser || user.is_staff) {
+    return 'Admin'
+  }
   if (user.is_recruiter) {
     return 'Recruiter'
   }

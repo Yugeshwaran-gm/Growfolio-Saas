@@ -3,8 +3,12 @@ import { AdminLayout } from '../../layouts/AdminLayout'
 import { Loading } from '../../components/ui/Loading'
 import { ErrorState, EmptyState } from '../../components/ui/States'
 import { adminService } from '../../services/adminService'
+import Button from '../../components/ui/Button'
 
 function resolveRole(user) {
+  if (user.is_superuser || user.is_staff) {
+    return 'Admin'
+  }
   if (user.is_recruiter) {
     return 'Recruiter'
   }
@@ -122,7 +126,7 @@ export default function UserManagementPage() {
                   placeholder="Search by name or email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-xl border-none bg-slate-100 py-3 pl-12 pr-4 text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-primary dark:bg-slate-800/50 dark:text-slate-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-accent/50 focus:border-accent"
                 />
               </div>
             </div>
@@ -136,8 +140,8 @@ export default function UserManagementPage() {
                     onClick={() => setSelectedRole(selectedRole === role ? null : role)}
                     className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
                       selectedRole === role
-                        ? 'bg-primary text-white'
-                        : 'bg-slate-100 text-primary hover:bg-slate-200 dark:bg-slate-800'
+                        ? 'bg-primary-500 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
                     }`}
                   >
                     {role}
@@ -166,14 +170,14 @@ export default function UserManagementPage() {
               <>
                 <div className="flex-1 overflow-x-auto">
                   <table className="w-full text-left">
-                    <thead className="sticky top-0 border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
-                      <tr>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">User</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Role</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Actions</th>
-                      </tr>
-                    </thead>
+                    <thead className="sticky top-0 border-b border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-800/50">
+                          <tr>
+                            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-700">User</th>
+                            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-700">Role</th>
+                            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-700">Status</th>
+                            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-700">Actions</th>
+                          </tr>
+                        </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {paginatedUsers.map((user) => (
                         <tr key={user.id}>
@@ -190,29 +194,27 @@ export default function UserManagementPage() {
                             <span
                               className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
                                 user.is_active
-                                  ? 'bg-accent/20 text-accent ring-1 ring-inset ring-accent/30'
-                                  : 'bg-red-100 text-red-700 ring-1 ring-inset ring-red-200'
+                                  ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+                                  : 'bg-red-50 text-red-700 ring-1 ring-red-100'
                               }`}
                             >
                               {user.is_active ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <button
+                            <Button
+                              variant={user.is_active ? 'danger' : 'primary'}
+                              size="sm"
                               onClick={() => handleToggleUser(user.id)}
                               disabled={togglingUserId === user.id}
-                              className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                                user.is_active
-                                  ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                                  : 'bg-primary text-white hover:bg-primary/90'
-                              } disabled:cursor-not-allowed disabled:opacity-50`}
+                              className="disabled:opacity-50"
                             >
                               {togglingUserId === user.id
                                 ? 'Updating...'
                                 : user.is_active
                                 ? 'Deactivate'
                                 : 'Activate'}
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       ))}
