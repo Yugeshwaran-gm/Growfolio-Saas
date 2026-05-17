@@ -32,7 +32,8 @@ export const projectService = {
 
   importGithubProjects: async () => {
     const response = await apiClient.post('/integrations/github/sync/')
-    return response.data
+    // Handle both sync (status: completed) and async (status: queued) responses
+    return response.data?.status === 'queued' ? { status: 'queued', message: 'Sync started in background' } : response.data
   },
 
   // reserved for future use: public project detail and visibility toggle endpoints

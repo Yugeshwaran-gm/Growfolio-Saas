@@ -3,6 +3,9 @@ import { DashboardLayout } from '../../layouts/DashboardLayout'
 import { Loading } from '../../components/ui/Loading'
 import { ErrorState, EmptyState } from '../../components/ui/States'
 import { analyticsService } from '../../services/analyticsService'
+import { useAuth } from '../../hooks/useAuth'
+import { useGraphMetrics } from '../../hooks/useGraphMetrics'
+import SpecializationBadge from '../../components/graph/SpecializationBadge'
 
 // KPI Stat Card Component
 function StatCard({ icon, label, value }) {
@@ -46,10 +49,12 @@ function ChartDataPanel({ title, chartData }) {
 }
 
 export default function AnalyticsDashboard() {
+  const { user } = useAuth()
   const [timePeriod, setTimePeriod] = useState('30D')
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const { metrics: graphMetrics, loading: graphLoading, error: graphError } = useGraphMetrics({ topN: 5, enabled: true })
 
   const extractDashboard = (payload) => payload?.data ?? payload ?? {}
 
@@ -77,6 +82,7 @@ export default function AnalyticsDashboard() {
 
   const hasDashboardData = profileViews !== null || projectViews !== null
   const detailedChartDataAvailable = Array.isArray(dashboardData?.chart_data) && dashboardData.chart_data.length > 0
+  const specialization = graphMetrics?.specialization_summary || {}
 
   const statCards = [
     {
@@ -142,6 +148,41 @@ export default function AnalyticsDashboard() {
                 />
               ))}
             </div>
+
+            {user?.is_recruiter ? (
+              <div className="mb-8 rounded-xl border border-slate-100 bg-white p-8 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xl font-bold text-primary">Recruiter Intelligence Summary</h4>
+                    <p className="text-sm text-slate-500">Lightweight candidate-intelligence signals available for recruiter workflows.</p>
+                  </div>
+                  <SpecializationBadge level={specialization.specialization_level} topSkill={specialization.top_skill} compact />
+                </div>
+
+                {graphLoading ? (
+                  <div className="mt-4">
+                    <Loading message="Loading recruiter intelligence signals..." />
+                  </div>
+                ) : graphError ? (
+                  <p className="mt-4 text-sm text-red-600">{graphError}</p>
+                ) : (
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Top Technology</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">{specialization.top_skill || 'N/A'}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Top-3 Concentration</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">{Math.round(Number(specialization.top_3_skill_share || 0) * 100)}%</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Skill Consistency</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">{Math.round(Number(graphMetrics?.cross_project_skill_consistency?.top_skill_project_coverage_percent || 0))}%</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {/* Main Performance Chart */}
             <div className="bg-white p-8 rounded-xl border border-slate-100 shadow-sm mb-8">

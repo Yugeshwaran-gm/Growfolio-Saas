@@ -1,7 +1,8 @@
 import apiClient from './api'
+import { unwrapApiData, unwrapListData } from './api'
 
 function unwrapListResponse(data) {
-  return data?.results ?? data ?? []
+  return unwrapListData(data)
 }
 
 export const notificationService = {
@@ -14,6 +15,6 @@ export const notificationService = {
 
   markAsRead: async (notificationId) => {
     const response = await apiClient.patch(`/notifications/${notificationId}/read/`)
-    return response.data
+    return unwrapApiData(response.data)
   },
 }

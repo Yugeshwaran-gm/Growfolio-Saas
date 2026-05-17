@@ -16,6 +16,7 @@ from analytics.models import ProfileView, ProjectView, ArticleView
 from skills.models import UserSkill
 from integrations.models import ConnectedSource
 from notifications.models import Notification
+from config.api_contracts import api_error, api_success
 
 
 class AdminDashboardView(APIView):
@@ -25,10 +26,7 @@ class AdminDashboardView(APIView):
     def get(self, request):
 
         if not request.user.is_staff:
-            return Response(
-                {"error": "Admin access only"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return api_error("Admin access only", status_code=status.HTTP_403_FORBIDDEN)
 
         total_users = User.objects.count()
 
@@ -42,7 +40,7 @@ class AdminDashboardView(APIView):
 
         total_profile_views = ProfileView.objects.count()
 
-        return Response({
+        return api_success({
             "total_users": total_users,
             "active_users_last_7_days": active_users,
             "total_projects": total_projects,
@@ -56,7 +54,7 @@ class AdminUserListView(APIView):
     def get(self, request):
 
         if not request.user.is_staff:
-            return Response({"error": "Admin only"}, status=403)
+            return api_error("Admin only", status_code=403)
 
         users_queryset = User.objects.all()
 
@@ -76,7 +74,7 @@ class AdminUserListView(APIView):
             "date_joined",
         ).order_by("-date_joined", "id")
 
-        return Response(users)
+        return api_success(list(users))
     
 class ToggleUserStatusView(APIView):
 
@@ -85,20 +83,20 @@ class ToggleUserStatusView(APIView):
     def patch(self, request, pk):
 
         if not request.user.is_staff:
-            return Response({"error": "Admin only"}, status=403)
+            return api_error("Admin only", status_code=403)
 
         user = get_object_or_404(User, id=pk)
 
         if user.id == request.user.id:
-            return Response({"error": "You cannot change your own account status."}, status=400)
+            return api_error("You cannot change your own account status.", status_code=400)
 
         if user.is_staff and not request.user.is_superuser:
-            return Response({"error": "Only superadmins can change another admin account."}, status=403)
+            return api_error("Only superadmins can change another admin account.", status_code=403)
 
         user.is_active = not user.is_active
         user.save()
 
-        return Response({
+        return api_success({
             "message": "User status updated",
             "is_active": user.is_active
         })
@@ -111,14 +109,14 @@ class AdminUserDetailView(APIView):
     def get(self, request, pk):
 
         if not request.user.is_staff:
-            return Response({"error": "Admin only"}, status=403)
+            return api_error("Admin only", status_code=403)
 
         user = get_object_or_404(User, id=pk)
 
         if user.is_staff and not request.user.is_superuser and user.id != request.user.id:
-            return Response({"error": "Only superadmins can view other admin accounts."}, status=403)
+            return api_error("Only superadmins can view other admin accounts.", status_code=403)
 
-        return Response({
+        return api_success({
             "id": user.id,
             "email": user.email,
             "is_active": user.is_active,
@@ -138,7 +136,7 @@ class AdminContentView(APIView):
     def get(self, request):
 
         if not request.user.is_staff:
-            return Response({"error": "Admin access only"}, status=status.HTTP_403_FORBIDDEN)
+            return api_error("Admin access only", status_code=status.HTTP_403_FORBIDDEN)
 
         latest_articles = list(
             Article.objects.select_related("user")
@@ -152,7 +150,7 @@ class AdminContentView(APIView):
             .values("id", "title", "is_visible", "created_at", "user__email")[:5]
         )
 
-        return Response({
+        return api_success({
             "totals": {
                 "articles": Article.objects.count(),
                 "projects": Project.objects.count(),
@@ -171,7 +169,7 @@ class AdminAnalyticsView(APIView):
     def get(self, request):
 
         if not request.user.is_staff:
-            return Response({"error": "Admin access only"}, status=status.HTTP_403_FORBIDDEN)
+            return api_error("Admin access only", status_code=status.HTTP_403_FORBIDDEN)
 
         last_7_days = now() - timedelta(days=7)
 
@@ -182,7 +180,7 @@ class AdminAnalyticsView(APIView):
             .values("id", "title", "user__email", "view_count")[:5]
         )
 
-        return Response({
+        return api_success({
             "totals": {
                 "users": User.objects.count(),
                 "projects": Project.objects.count(),
@@ -208,9 +206,9 @@ class AdminSettingsView(APIView):
     def get(self, request):
 
         if not request.user.is_staff:
-            return Response({"error": "Admin access only"}, status=status.HTTP_403_FORBIDDEN)
+            return api_error("Admin access only", status_code=status.HTTP_403_FORBIDDEN)
 
-        return Response({
+        return api_success({
             "user_summary": {
                 "admins": User.objects.filter(is_staff=True).count(),
                 "creators": User.objects.filter(is_creator=True).count(),

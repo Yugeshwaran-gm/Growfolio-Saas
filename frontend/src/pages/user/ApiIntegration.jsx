@@ -228,19 +228,26 @@ export default function ApiIntegration() {
     try {
       const response = await integrationService.syncIntegration(sourceName)
 
-      if (response?.status !== 'completed') {
-        setActionError(response?.error || `Failed to sync ${sourceName}.`)
+      if (response?.status === 'queued') {
+        setSuccessMessage(`${sourceName} sync started in background. Status will update as it progresses.`)
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        await loadIntegrations(false)
         return
       }
 
-      const createdCount = Number(response?.created || 0)
-      const updatedCount = Number(response?.updated || 0)
-      const totalChanged = createdCount + updatedCount
+      if (response?.status === 'completed') {
+        const createdCount = Number(response?.created || 0)
+        const updatedCount = Number(response?.updated || 0)
+        const totalChanged = createdCount + updatedCount
 
-      setSuccessMessage(
-        `${sourceName} sync completed. Created ${createdCount}, updated ${updatedCount}, total changes ${totalChanged}.`
-      )
-      await loadIntegrations(false)
+        setSuccessMessage(
+          `${sourceName} sync completed. Created ${createdCount}, updated ${updatedCount}, total changes ${totalChanged}.`
+        )
+        await loadIntegrations(false)
+        return
+      }
+
+      setActionError(response?.error || `Failed to sync ${sourceName}.`)
     } catch (err) {
       setActionError(err.response?.data?.error || `Failed to sync ${sourceName}.`)
     } finally {

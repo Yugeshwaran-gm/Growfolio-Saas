@@ -3,45 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { AuthLayout } from '../../layouts/AuthLayout'
 import { Alert } from '../../components/ui/States'
 import { authService } from '../../services/authService'
-
-const roleOptions = [
-  { value: 'developer', label: 'Developer', icon: 'code' },
-  { value: 'writer', label: 'Writer', icon: 'edit_note' },
-  { value: 'creator', label: 'Creator', icon: 'palette' },
-  { value: 'researcher', label: 'Researcher', icon: 'science' },
-]
-
-function RoleOption({ value, label, icon, selectedRole, onSelect }) {
-  const isSelected = selectedRole === value
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(value)}
-      className={`group rounded-xl border p-4 text-center transition-all duration-200 ${
-        isSelected
-          ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500'
-          : 'border-slate-200 bg-white hover:border-primary-500/40 hover:bg-primary-50/40'
-      }`}
-      aria-pressed={isSelected}
-    >
-      <span
-        className={`mb-2 block text-2xl leading-none transition-colors ${
-          isSelected ? 'text-primary-500' : 'text-slate-400 group-hover:text-primary-500'
-        }`}
-      >
-        {icon}
-      </span>
-      <span
-        className={`text-sm font-semibold ${
-          isSelected ? 'text-primary-500' : 'text-slate-700'
-        }`}
-      >
-        {label}
-      </span>
-    </button>
-  )
-}
+import { profileService } from '../../services/profileService'
+import { useAuth } from '../../hooks/useAuth'
 
 function SocialButton({ children }) {
   return (
@@ -79,12 +42,12 @@ export default function RegisterPage() {
     username: '',
     email: '',
     password: '',
-    is_admin: false,
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const handleChange = (e) => {
     setFormData({
@@ -108,15 +71,32 @@ export default function RegisterPage() {
     try {
       const username = formData.username.trim() || formData.email.split('@')[0]
 
-      const response = await authService.register({
+      await authService.register({
         email: formData.email,
         username,
         password: formData.password,
-        is_admin: formData.is_admin,
       })
 
-      setSuccess('Account created successfully. Redirecting to login...')
-      setTimeout(() => navigate('/login'), 1200)
+      const authResponse = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      login({ email: formData.email }, authResponse.access, authResponse.refresh)
+
+      try {
+        const profile = await profileService.getProfile()
+        login({ email: formData.email, ...profile }, authResponse.access, authResponse.refresh)
+
+        if (profile?.is_staff || profile?.is_superuser) {
+          navigate('/admin')
+        } else {
+          navigate('/dashboard')
+        }
+      } catch (profileError) {
+        console.warn('Registered and logged in without profile hydration:', profileError)
+        navigate('/dashboard')
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally {
@@ -226,20 +206,6 @@ export default function RegisterPage() {
                   Must be at least 8 characters long.
                 </p>
               </div>
-
-              {/* <div className="flex items-center gap-3 pt-2">
-                <input
-                  id="is_admin"
-                  name="is_admin"
-                  type="checkbox"
-                  checked={formData.is_admin}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, is_admin: e.target.checked }))}
-                  className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
-                />
-                <label htmlFor="is_admin" className="text-sm font-medium text-slate-700">
-                  Register as Admin
-                </label>
-              </div> */}
             </div>
 
             <button
@@ -285,7 +251,7 @@ export default function RegisterPage() {
 
           <div className="border-t border-slate-100 bg-primary-50/50 px-6 py-5 text-center sm:px-8">
             <p className="text-sm text-slate-500">
-              By clicking "Create Account", you agree to our{' '}
+              By clicking &quot;Create Account&quot;, you agree to our{' '}
               <span className="font-medium text-primary-500">Terms of Service</span>{' '}
               and{' '}
               <span className="font-medium text-primary-500">Privacy Policy</span>

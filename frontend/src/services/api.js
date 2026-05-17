@@ -11,8 +11,14 @@ const apiClient = axios.create({
   timeout: 15000,
 })
 
-const ACCESS_TOKEN_KEY = 'auth_token'
-const REFRESH_TOKEN_KEY = 'refresh_token'
+export const AUTH_STORAGE_KEYS = {
+  ACCESS_TOKEN: 'auth_token',
+  REFRESH_TOKEN: 'refresh_token',
+  USER: 'auth_user',
+}
+
+const ACCESS_TOKEN_KEY = AUTH_STORAGE_KEYS.ACCESS_TOKEN
+const REFRESH_TOKEN_KEY = AUTH_STORAGE_KEYS.REFRESH_TOKEN
 
 function getAccessToken() {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY)
@@ -22,6 +28,25 @@ function getRefreshToken() {
   return sessionStorage.getItem(REFRESH_TOKEN_KEY)
 }
 
+function restoreAuthSession() {
+  const storedToken = getAccessToken()
+  const storedUserRaw = sessionStorage.getItem(AUTH_STORAGE_KEYS.USER)
+
+  if (!storedToken || !storedUserRaw) {
+    return { token: null, user: null, refreshToken: null }
+  }
+
+  try {
+    return {
+      token: storedToken,
+      user: JSON.parse(storedUserRaw),
+      refreshToken: getRefreshToken(),
+    }
+  } catch {
+    return { token: null, user: null, refreshToken: null }
+  }
+}
+
 function setAccessToken(token) {
   sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
 }
@@ -29,7 +54,25 @@ function setAccessToken(token) {
 function clearAuthStorage() {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY)
   sessionStorage.removeItem(REFRESH_TOKEN_KEY)
-  sessionStorage.removeItem('auth_user')
+  sessionStorage.removeItem(AUTH_STORAGE_KEYS.USER)
+}
+
+function unwrapApiData(data) {
+  if (data && typeof data === 'object' && 'data' in data) {
+    return data.data
+  }
+
+  return data
+}
+
+function unwrapListData(data) {
+  const payload = unwrapApiData(data)
+
+  if (payload && typeof payload === 'object' && 'results' in payload) {
+    return Array.isArray(payload.results) ? payload.results : []
+  }
+
+  return Array.isArray(payload) ? payload : []
 }
 
 apiClient.interceptors.request.use(
@@ -105,5 +148,5 @@ apiClient.interceptors.response.use(
   }
 )
 
-export { clearAuthStorage, getAccessToken, getRefreshToken, setAccessToken }
+export { clearAuthStorage, getAccessToken, getRefreshToken, restoreAuthSession, setAccessToken, unwrapApiData, unwrapListData }
 export default apiClient

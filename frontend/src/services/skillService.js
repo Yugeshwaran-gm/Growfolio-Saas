@@ -1,7 +1,8 @@
 import apiClient from './api'
+import { unwrapApiData, unwrapListData } from './api'
 
 function normalizeResponse(data) {
-  return data?.data || data || []
+  return unwrapApiData(data) || []
 }
 
 export const skillService = {
@@ -12,13 +13,12 @@ export const skillService = {
 
   listSkills: async () => {
     const response = await apiClient.get('/skills/')
-    // response is an array of { id, name }
-    return response.data || []
+    return unwrapListData(response.data)
   },
 
   updateSkill: async (id, payload) => {
     const response = await apiClient.patch(`/skills/${id}/`, payload)
-    return response.data
+    return unwrapApiData(response.data)
   },
 
   deleteSkill: async (id) => {

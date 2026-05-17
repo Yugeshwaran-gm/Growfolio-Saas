@@ -1,7 +1,8 @@
 import apiClient from './api'
+import { unwrapApiData, unwrapListData } from './api'
 
 function normalizeResponse(data) {
-  return data?.data || data || []
+  return unwrapApiData(data) || []
 }
 
 export const adminService = {
@@ -13,7 +14,7 @@ export const adminService = {
   listUsers: async () => {
     const response = await apiClient.get('/admin/users/')
     const payload = normalizeResponse(response.data)
-    return Array.isArray(payload) ? payload : []
+    return unwrapListData(payload)
   },
 
   toggleUserStatus: async (userId) => {

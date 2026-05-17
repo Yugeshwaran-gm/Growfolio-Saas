@@ -20,7 +20,7 @@ def build_user_graph(user):
             name=us.skill.name
         )
 
-        skill_nodes[us.skill.name] = node
+        skill_nodes[us.skill.name.strip().lower()] = node
 
     # Create project nodes
     for project in Project.objects.filter(user=user):
@@ -35,7 +35,9 @@ def build_user_graph(user):
 
             for tech in project.tech_stack:
 
-                skill_node = skill_nodes.get(tech.lower())
+                normalized_tech = str(tech or "").strip().lower()
+
+                skill_node = skill_nodes.get(normalized_tech)
 
                 if skill_node:
 
@@ -55,9 +57,11 @@ def build_user_graph(user):
             name=article.title
         )
 
-        for tag in article.tags:
+        for tag in (article.tags or []):
 
-            skill_node = skill_nodes.get(tag.lower())
+            normalized_tag = str(tag or "").strip().lower()
+
+            skill_node = skill_nodes.get(normalized_tag)
 
             if skill_node:
 

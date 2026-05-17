@@ -1,7 +1,8 @@
 import apiClient from './api'
+import { unwrapApiData } from './api'
 
 function normalizeResponse(data) {
-  return data?.data || data || []
+  return unwrapApiData(data) || []
 }
 
 export const articleService = {

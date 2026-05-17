@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import ProfileView, ProjectView
+from config.api_contracts import api_success
 
 
 class DashboardAnalyticsView(APIView):
@@ -18,7 +19,7 @@ class DashboardAnalyticsView(APIView):
         # Count all project view records for projects owned by the logged-in user.
         total_project_views = ProjectView.objects.filter(project__user=user).count()
 
-        return Response({
+        return api_success({
             "profile_views": profile_views,
             "project_views": total_project_views
         })

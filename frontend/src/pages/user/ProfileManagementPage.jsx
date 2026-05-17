@@ -6,6 +6,8 @@ import { Alert, ErrorState, EmptyState } from '../../components/ui/States'
 import { Loading } from '../../components/ui/Loading'
 import { API_BASE_URL } from '../../services/api'
 import { profileService } from '../../services/profileService'
+import { useGraphMetrics } from '../../hooks/useGraphMetrics'
+import SpecializationBadge from '../../components/graph/SpecializationBadge'
 
 export default function ProfileManagementPage() {
   const [formData, setFormData] = useState({
@@ -27,6 +29,9 @@ export default function ProfileManagementPage() {
   const [saving, setSaving] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const { metrics: graphMetrics, loading: graphLoading, error: graphError } = useGraphMetrics({ topN: 5, enabled: true })
+
+  const specialization = graphMetrics?.specialization_summary || {}
 
   const profileImageUrl = useMemo(() => {
     if (!currentImage) {
@@ -136,6 +141,22 @@ export default function ProfileManagementPage() {
           <h2 className="text-3xl font-extrabold tracking-tight text-primary-500">Profile Management</h2>
           <p className="mt-1 text-slate-500">Update your public profile details.</p>
         </header>
+
+        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-primary-500">Specialization Badge</h3>
+              <p className="text-sm text-slate-500">Your profile now includes graph-based expertise concentration signals.</p>
+            </div>
+            {graphLoading ? (
+              <span className="text-sm text-slate-500">Loading...</span>
+            ) : graphError ? (
+              <span className="text-sm text-red-600">Unavailable</span>
+            ) : (
+              <SpecializationBadge level={specialization.specialization_level} topSkill={specialization.top_skill} />
+            )}
+          </div>
+        </section>
 
         {loading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-10">

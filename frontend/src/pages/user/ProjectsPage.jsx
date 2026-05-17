@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import { EmptyState } from '../../components/ui/States'
 import { Alert } from '../../components/ui/States'
+import IntegrationSetupModal from '../../components/integrations/IntegrationSetupModal'
 import { projectService } from '../../services/projectService'
 import { integrationService } from '../../services/integrationService'
 
@@ -30,6 +31,7 @@ export default function ProjectsPage() {
   const [importFeedback, setImportFeedback] = useState(null)
   const [syncing, setSyncing] = useState(false)
   const [connecting, setConnecting] = useState(false)
+  const [isSetupOpen, setIsSetupOpen] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [savingId, setSavingId] = useState(null)
   const [savingAll, setSavingAll] = useState(false)
@@ -154,30 +156,41 @@ export default function ProjectsPage() {
     try {
       const response = await integrationService.syncIntegration('github')
 
-      if (response?.status !== 'completed') {
-        setError(response?.error || 'Failed to sync GitHub projects.')
+      if (response?.status === 'queued') {
+        setImportFeedback({
+          type: 'info',
+          message: 'GitHub sync started in background. Projects will update as the sync progresses.',
+        })
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        await reloadProjects()
+        await loadGithubIntegration()
         return
       }
 
-      const createdCount = Number(response?.created || 0)
-      const updatedCount = Number(response?.updated || 0)
-      const totalChanged = createdCount + updatedCount
+      if (response?.status === 'completed') {
+        const createdCount = Number(response?.created || 0)
+        const updatedCount = Number(response?.updated || 0)
+        const totalChanged = createdCount + updatedCount
 
-      await reloadProjects()
+        await reloadProjects()
 
-      if (totalChanged > 0) {
-        setImportFeedback({
-          type: 'success',
-          message: `GitHub sync completed. Created ${createdCount} and updated ${updatedCount} project${totalChanged === 1 ? '' : 's'}.`,
-        })
-      } else {
-        setImportFeedback({
-          type: 'info',
-          message: 'GitHub sync completed. No project changes were required.',
-        })
+        if (totalChanged > 0) {
+          setImportFeedback({
+            type: 'success',
+            message: `GitHub sync completed. Created ${createdCount} and updated ${updatedCount} project${totalChanged === 1 ? '' : 's'}.`,
+          })
+        } else {
+          setImportFeedback({
+            type: 'info',
+            message: 'GitHub sync completed. No project changes were required.',
+          })
+        }
+
+        await loadGithubIntegration()
+        return
       }
 
-      await loadGithubIntegration()
+      setError(response?.error || 'Failed to sync GitHub projects.')
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -189,21 +202,32 @@ export default function ProjectsPage() {
     }
   }
 
-  const handleConnectGitHub = async () => {
+  const openGitHubSetup = () => {
+    setError('')
+    setImportFeedback(null)
+    setIsSetupOpen(true)
+  }
+
+  const closeGitHubSetup = () => {
+    if (!connecting) {
+      setIsSetupOpen(false)
+    }
+  }
+
+  const handleConnectGitHub = async (payload) => {
     setConnecting(true)
     setError('')
     setImportFeedback(null)
 
     try {
-      const response = await integrationService.connectIntegration({
-        source_name: 'github',
-      })
+      const response = await integrationService.connectIntegration(payload)
 
       if (response?.success === false) {
         setError(response?.error || 'Failed to connect GitHub integration.')
         return
       }
 
+      setIsSetupOpen(false)
       await loadGithubIntegration()
       await handleSyncGitHub()
     } catch (err) {
@@ -262,7 +286,7 @@ export default function ProjectsPage() {
             {syncing ? 'Syncing...' : 'Sync Now'}
           </Button>
         ) : (
-          <Button variant="primary" onClick={handleConnectGitHub} disabled={connecting || syncing}>
+          <Button variant="primary" onClick={openGitHubSetup} disabled={connecting || syncing}>
             {connecting ? 'Connecting...' : 'Connect GitHub'}
           </Button>
         )}
@@ -388,7 +412,7 @@ export default function ProjectsPage() {
                     {syncing ? 'Syncing...' : 'Sync GitHub Projects'}
                   </Button>
                 ) : (
-                  <Button variant="primary" onClick={handleConnectGitHub} disabled={connecting || syncing}>
+                  <Button variant="primary" onClick={openGitHubSetup} disabled={connecting || syncing}>
                     {connecting ? 'Connecting...' : 'Connect GitHub'}
                   </Button>
                 )
@@ -397,6 +421,16 @@ export default function ProjectsPage() {
           </CardBody>
         </Card>
       )}
+
+      <IntegrationSetupModal
+        isOpen={isSetupOpen}
+        onClose={closeGitHubSetup}
+        sourceName="github"
+        initialValues={{
+          external_username: githubIntegration?.external_username || '',
+        }}
+        onSubmit={handleConnectGitHub}
+      />
     </DashboardLayout>
   )
 }

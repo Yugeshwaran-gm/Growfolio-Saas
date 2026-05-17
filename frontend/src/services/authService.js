@@ -1,4 +1,4 @@
-import apiClient from './api'
+import apiClient, { clearAuthStorage } from './api'
 
 export const authService = {
   login: async ({ email, password }) => {
@@ -15,14 +15,6 @@ export const authService = {
       email,
       username,
       password,
-    })
-
-    return response.data
-  },
-
-  refreshToken: async (refreshToken) => {
-    const response = await apiClient.post('/auth/refresh/', {
-      refresh: refreshToken,
     })
 
     return response.data
@@ -54,8 +46,6 @@ export const authService = {
   },
 
   logout: () => {
-    sessionStorage.removeItem('auth_token')
-    sessionStorage.removeItem('refresh_token')
-    sessionStorage.removeItem('auth_user')
+    clearAuthStorage()
   },
 }

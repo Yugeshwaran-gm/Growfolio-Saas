@@ -1,12 +1,5 @@
 import apiClient from './api'
-
-function unwrapApiData(data) {
-  if (data && typeof data === 'object' && 'data' in data) {
-    return data.data
-  }
-
-  return data
-}
+import { unwrapApiData, unwrapListData } from './api'
 
 function normalizeConnectResponse(data) {
   const payload = unwrapApiData(data)
@@ -33,8 +26,7 @@ function normalizeConnectResponse(data) {
 export const integrationService = {
   getIntegrations: async () => {
     const response = await apiClient.get('/integrations/')
-    const payload = unwrapApiData(response.data)
-    return Array.isArray(payload) ? payload : []
+    return unwrapListData(response.data)
   },
 
   // reserved for future use: listIntegrations alias
@@ -54,11 +46,11 @@ export const integrationService = {
 
   syncIntegration: async (source) => {
     const response = await apiClient.post(`/integrations/${source}/sync/`)
-    return response.data
+    return unwrapApiData(response.data)
   },
 
   disconnectIntegration: async (source) => {
     const response = await apiClient.delete(`/integrations/${source}/disconnect/`)
-    return response.data
+    return unwrapApiData(response.data)
   },
 }

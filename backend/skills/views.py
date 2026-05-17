@@ -8,6 +8,7 @@ from .services.ordering import normalize_visible_skill_order
 from .models import Skill, UserSkill
 from .serializers import SkillSerializer, UserSkillSerializer
 from rest_framework.permissions import AllowAny
+from config.api_contracts import api_success
 
 
 class SkillExtractionView(APIView):
@@ -20,8 +21,7 @@ class SkillExtractionView(APIView):
         discovered_count = result.get("discovered_count", 0)
         total_user_skills = result.get("total_user_skills", 0)
 
-        return Response({
-            "success": True,
+        return api_success({
             "message": f"{total_user_skills} skills extracted",
             "summary": f"{discovered_count} newly extracted, {total_user_skills} total",
             "discovered_count": discovered_count,
@@ -47,8 +47,8 @@ class SkillListView(APIView):
             # Return the authenticated user's extracted skills
             user_skills = UserSkill.objects.filter(user=request.user).select_related('skill').order_by('sort_order', 'skill__name')
             serializer = UserSkillSerializer(user_skills, many=True)
-            return Response(serializer.data)
+            return api_success(serializer.data)
 
         skills = Skill.objects.all().order_by("name")
         serializer = SkillSerializer(skills, many=True)
-        return Response(serializer.data)
+        return api_success(serializer.data)

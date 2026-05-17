@@ -1,10 +1,13 @@
 import { createContext, useState, useCallback, useEffect } from 'react'
+import {
+  AUTH_STORAGE_KEYS,
+  clearAuthStorage,
+  restoreAuthSession,
+  getRefreshToken as getStoredRefreshToken,
+  setAccessToken,
+} from '../services/api'
 
 export const AuthContext = createContext(null)
-
-const TOKEN_KEY = 'auth_token'
-const REFRESH_TOKEN_KEY = 'refresh_token'
-const USER_KEY = 'auth_user'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -16,12 +19,11 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initializeAuth = () => {
       try {
-        const storedToken = sessionStorage.getItem(TOKEN_KEY)
-        const storedUser = sessionStorage.getItem(USER_KEY)
+        const session = restoreAuthSession()
 
-        if (storedToken && storedUser) {
-          setToken(storedToken)
-          setUser(JSON.parse(storedUser))
+        if (session.token && session.user) {
+          setToken(session.token)
+          setUser(session.user)
         }
       } catch (err) {
         console.error('Failed to initialize auth:', err)
@@ -41,12 +43,12 @@ export function AuthProvider({ children }) {
       setError(null)
 
       // Store in sessionStorage (cleared on browser close)
-      sessionStorage.setItem(TOKEN_KEY, authToken)
-      sessionStorage.setItem(USER_KEY, JSON.stringify(userData))
+      setAccessToken(authToken)
+      sessionStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(userData))
 
       // Store refresh token in a more secure way (httpOnly cookies would be ideal in production)
       if (refreshToken) {
-        sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+        sessionStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
       }
     } catch (err) {
       setError('Failed to login')
@@ -59,15 +61,14 @@ export function AuthProvider({ children }) {
     setToken(null)
     setError(null)
 
-    // Clear all auth-related data
-    sessionStorage.removeItem(TOKEN_KEY)
-    sessionStorage.removeItem(USER_KEY)
-    sessionStorage.removeItem(REFRESH_TOKEN_KEY)
+    // Keep storage clearing centralized with transport/interceptor layer.
+    clearAuthStorage()
   }, [])
 
   const updateUser = useCallback((updatedUserData) => {
-    setUser(prev => ({ ...prev, ...updatedUserData }))
-    sessionStorage.setItem(USER_KEY, JSON.stringify({ ...user, ...updatedUserData }))
+    const nextUser = { ...(user || {}), ...updatedUserData }
+    setUser(nextUser)
+    sessionStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(nextUser))
   }, [user])
 
   const getToken = useCallback(() => {
@@ -75,7 +76,7 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const getRefreshToken = useCallback(() => {
-    return sessionStorage.getItem(REFRESH_TOKEN_KEY)
+    return getStoredRefreshToken()
   }, [])
 
   const isAuthenticated = !!token && !!user

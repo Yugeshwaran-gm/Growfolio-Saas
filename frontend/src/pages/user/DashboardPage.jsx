@@ -8,6 +8,11 @@ import Button from '../../components/ui/Button'
 import MaterialIcon from '../../components/ui/MaterialIcon'
 import { analyticsService } from '../../services/analyticsService'
 import { integrationService } from '../../services/integrationService'
+import { useGraphMetrics } from '../../hooks/useGraphMetrics'
+import { useGraphData } from '../../hooks/useGraphData'
+import SpecializationBadge from '../../components/graph/SpecializationBadge'
+import TopSkillsWidget from '../../components/graph/TopSkillsWidget'
+import { GraphVisualization } from '../../components/graph/GraphVisualization'
 
 // Stat Card Component 
 function StatCard({ icon, label, value, badge, badgeColor, isPreview = false, previewNote = '' }) {
@@ -82,6 +87,14 @@ export default function DashboardPage() {
   const [integrationsLoading, setIntegrationsLoading] = useState(true)
   const [integrationsError, setIntegrationsError] = useState('')
   const displayName = user?.full_name || user?.first_name || 'User'
+  const { metrics: graphMetrics, loading: graphLoading, error: graphError } = useGraphMetrics({ topN: 6, enabled: true })
+  const { nodes: graphNodes, edges: graphEdges, loading: graphDataLoading, error: graphDataError } = useGraphData(250, true)
+
+  const specialization = graphMetrics?.specialization_summary || {}
+  const projectConcentration = graphMetrics?.project_concentration || {}
+  const topSkills = Array.isArray(graphMetrics?.top_skills) ? graphMetrics.top_skills : []
+  const mostConnected = Array.isArray(graphMetrics?.most_connected_technologies) ? graphMetrics.most_connected_technologies : []
+  const topSkillPair = graphMetrics?.skill_ecosystem_clustering?.top_skill_pairs?.[0]
 
   const statCards = [
     {
@@ -310,6 +323,96 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Graph Visualization */}
+          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-primary-500">Your Skill Graph</h3>
+              <p className="text-sm text-slate-500">Visual map of how your skills connect across projects.</p>
+            </div>
+            <GraphVisualization 
+              nodes={graphNodes}
+              edges={graphEdges}
+              loading={graphDataLoading}
+              error={graphDataError}
+            />
+          </section>
+
+          <section className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-primary-500">Graph Intelligence</h3>
+                  <p className="text-sm text-slate-500">Specialization and skill ecosystem insights.</p>
+                </div>
+                <SpecializationBadge level={specialization.specialization_level} topSkill={specialization.top_skill} compact />
+              </div>
+
+              {graphLoading ? (
+                <Loading message="Loading graph intelligence..." />
+              ) : graphError ? (
+                <p className="text-sm text-red-600">{graphError}</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Specialization Level</p>
+                    <p className="mt-2 text-xl font-bold text-slate-900">{specialization.specialization_level || 'broad'}</p>
+                    <p className="mt-1 text-xs text-slate-500">Top skill share: {Number(specialization.top_skill_share || 0) * 100}%</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Project Concentration</p>
+                    <p className="mt-2 text-xl font-bold text-slate-900">{Number(projectConcentration.avg_skills_per_project || 0)}</p>
+                    <p className="mt-1 text-xs text-slate-500">Avg skills per project</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Skill Pair Insight</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">
+                      {topSkillPair
+                        ? `${topSkillPair.pair?.[0]} + ${topSkillPair.pair?.[1]}`
+                        : 'No pair signal available yet.'}
+                    </p>
+                    {topSkillPair ? (
+                      <p className="mt-1 text-xs text-slate-500">Observed together in {topSkillPair.project_count} project(s).</p>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-primary-500">Top Skills</h3>
+              <p className="mb-4 text-sm text-slate-500">Most connected technologies from your graph.</p>
+
+              {graphLoading ? (
+                <Loading message="Loading top skills..." />
+              ) : graphError ? (
+                <p className="text-sm text-red-600">{graphError}</p>
+              ) : (
+                <TopSkillsWidget skills={topSkills.length ? topSkills : mostConnected} limit={5} />
+              )}
+            </div>
+          </section>
+
+          {user?.is_recruiter ? (
+            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-primary-500">Recruiter Intelligence Summary</h3>
+              <p className="mt-1 text-sm text-slate-500">Reusable candidate-evaluation signals are active and ready for recruiter workflows.</p>
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Specialization</p>
+                  <p className="text-sm font-semibold text-slate-800">{specialization.specialization_level || 'broad'}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Top Technology</p>
+                  <p className="text-sm font-semibold text-slate-800">{specialization.top_skill || 'N/A'}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Consistency</p>
+                  <p className="text-sm font-semibold text-slate-800">{Math.round(Number(graphMetrics?.cross_project_skill_consistency?.top_skill_project_coverage_percent || 0))}%</p>
+                </div>
+              </div>
+            </section>
+          ) : null}
         </div>
       </div>
     </DashboardLayout>

@@ -9,6 +9,8 @@ import uuid
 from .models import ConnectedSource
 from .serializers import ConnectedSourceSerializer
 from .services.sync_service import sync_integration
+from .tasks import sync_integration_task
+from config.api_contracts import api_error, api_success
 
 logger = logging.getLogger(__name__)
 
@@ -43,23 +45,15 @@ class ConnectSourceView(APIView):
         default_connection_type = DEFAULT_CONNECTION_TYPE_BY_SOURCE.get(source_name)
 
         if source_name not in ALLOWED_SOURCES:
-            return Response({
-                "success": False,
-                "error": "Invalid source_name"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_error("Invalid source_name", status_code=status.HTTP_400_BAD_REQUEST)
 
         connection_type = (requested_connection_type or default_connection_type or "").strip().lower()
 
         if connection_type not in ALLOWED_CONNECTION_TYPES:
-            return Response({
-                "success": False,
-                "error": "Invalid connection_type"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_error("Invalid connection_type", status_code=status.HTTP_400_BAD_REQUEST)
 
         if source_name in REQUIRED_EXTERNAL_USERNAME_SOURCES and not external_username:
-            return Response({
-                "error": "external_username is required for this integration"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_error("external_username is required for this integration", status_code=status.HTTP_400_BAD_REQUEST)
 
         token = f"growfolio-verify-{uuid.uuid4().hex[:6]}"
 
@@ -76,15 +70,12 @@ class ConnectSourceView(APIView):
                 }
             )
         except ValidationError:
-            return Response({
-                "success": False,
-                "error": "Invalid source_name"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_error("Invalid source_name", status_code=status.HTTP_400_BAD_REQUEST)
 
-        return Response({
+        return api_success({
             "source": source.source_name,
             "status": "connected"
-        }, status=status.HTTP_200_OK)
+        }, status_code=status.HTTP_200_OK)
     
 # class SyncDevtoView(APIView):
 
@@ -131,10 +122,7 @@ class IntegrationListView(APIView):
             many=True
         )
         
-        return Response({
-            "success": True,
-            "data": serializer.data
-        })
+        return api_success(serializer.data)
     
 class IntegrationSyncView(APIView):
 
@@ -144,10 +132,7 @@ class IntegrationSyncView(APIView):
         source_name = normalize_source_name(source)
 
         if source_name not in ALLOWED_SOURCES:
-            return Response({
-                "success": False,
-                "error": "Invalid source_name"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_error("Invalid source_name", status_code=status.HTTP_400_BAD_REQUEST)
 
         try:
 
@@ -158,10 +143,7 @@ class IntegrationSyncView(APIView):
 
         except ConnectedSource.DoesNotExist:
 
-            return Response({
-                "success": False,
-                "error": "Integration not connected"
-            }, status=status.HTTP_404_NOT_FOUND)
+            return api_error("Integration not connected", status_code=status.HTTP_404_NOT_FOUND)
 
         try:
             integration.sync_status = "pending"
@@ -174,25 +156,12 @@ class IntegrationSyncView(APIView):
                 (integration.external_username or "").strip() or "<empty>",
             )
 
-            sync_result = sync_integration(request.user, integration)
+            sync_integration_task.delay(request.user.id, source_name)
 
-            created = 0
-            updated = 0
-
-            if isinstance(sync_result, dict):
-                created = int(sync_result.get("created", 0) or 0)
-                updated = int(sync_result.get("updated", 0) or 0)
-
-            integration.sync_status = "connected"
-            integration.last_sync = timezone.now()
-            integration.error_message = ""
-            integration.save(update_fields=["sync_status", "last_sync", "error_message"])
-
-            return Response({
-                "status": "completed",
-                "created": created,
-                "updated": updated
-            }, status=status.HTTP_200_OK)
+            return api_success({
+                "status": "queued",
+                "message": "Sync started in background. Check status for updates."
+            }, status_code=status.HTTP_200_OK)
 
         except Exception as e:
 
@@ -200,10 +169,7 @@ class IntegrationSyncView(APIView):
             integration.error_message = str(e)
             integration.save()
 
-            return Response({
-                "success": False,
-                "error": str(e)
-            }, status=status.HTTP_502_BAD_GATEWAY)
+            return api_error(str(e), status_code=status.HTTP_502_BAD_GATEWAY)
 
 class IntegrationDeleteView(APIView):
 
@@ -213,10 +179,7 @@ class IntegrationDeleteView(APIView):
         source_name = normalize_source_name(source)
 
         if source_name not in ALLOWED_SOURCES:
-            return Response({
-                "success": False,
-                "error": "Invalid source_name"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return api_error("Invalid source_name", status_code=status.HTTP_400_BAD_REQUEST)
 
         integration = ConnectedSource.objects.filter(
             user=request.user,
@@ -224,14 +187,10 @@ class IntegrationDeleteView(APIView):
         ).first()
 
         if not integration:
-            return Response({
-                "success": False,
-                "error": "Integration not found"
-            })
+            return api_error("Integration not found")
 
         integration.delete()
 
-        return Response({
-            "success": True,
+        return api_success({
             "message": "Integration disconnected"
         })
